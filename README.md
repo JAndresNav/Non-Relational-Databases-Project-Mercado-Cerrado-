@@ -14,4 +14,8 @@ Este proyecto desarrolla un Sistema de Recomendaciones para E-Commerce que perso
 
 ## Dgraph
 
+En Dgraph, la conexión se establece desde connect.py utilizando el cliente oficial pydgraph en Python.
+Dentro de la carpeta Dgraph/ se define el schema con los predicados y sus índices, el cual se aplica al iniciar la conexión mediante client.alter(). La inserción de datos en populate.py se realiza a través de transacciones (txn = client.txn()) que ejecutan mutaciones en formato JSON con txn.mutate(set_obj=data): primero se crean los nodos User, Product y Category, luego se establecen las aristas como bought, belongs_to y placed/contains al registrar órdenes, y finalmente se crean los nodos Review con sus aristas wrote_review y review_for.
+Las consultas en main.py se ejecutan mediante DQL usando la terminal, donde cada opción del menú corresponde a un requerimiento funcional
+
 ## Cassandra
