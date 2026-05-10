@@ -1,0 +1,11 @@
+name,description,category,price,stock,image,attr_material,attr_dimensions,attr_warranty
+Laptop Gamer Pro,Laptop de alto rendimiento para gaming,Electrónica,25999.99,15,assets/products/laptop_gamer.png,Aluminio,35x25x2 cm,2 años
+Audífonos Bluetooth,Audífonos inalámbricos con cancelación de ruido,Electrónica,1899.50,50,assets/products/audifonos_bt.png,Plástico ABS,18x16x8 cm,1 año
+Silla Ergonómica,Silla de oficina con soporte lumbar ajustable,Muebles,5499.00,20,assets/products/silla_ergo.png,Malla y acero,65x65x120 cm,3 años
+Teclado Mecánico RGB,Teclado mecánico con switches Cherry MX,Electrónica,2199.00,35,assets/products/teclado_rgb.png,Aluminio,44x14x4 cm,2 años
+Monitor 4K 27 pulgadas,Monitor UHD con panel IPS y 144Hz,Electrónica,8999.99,10,assets/products/monitor_4k.png,Plástico y metal,61x45x20 cm,3 años
+Mochila Antirrobo,Mochila con compartimento para laptop y puerto USB,Accesorios,899.00,60,assets/products/mochila.png,Poliéster impermeable,45x30x15 cm,6 meses
+Escritorio Ajustable,Escritorio de pie con altura eléctrica ajustable,Muebles,12500.00,8,assets/products/escritorio.png,Madera y acero,140x70x120 cm,5 años
+Mouse Inalámbrico,Mouse ergonómico con sensor de 16000 DPI,Electrónica,1299.00,45,assets/products/mouse.png,Plástico ABS,12x7x4 cm,1 año
+Cámara Web HD,Cámara 1080p con micrófono integrado,Electrónica,1599.00,30,assets/products/camara_web.png,Plástico,8x5x5 cm,1 año
+Lámpara LED de Escritorio,Lámpara con 5 niveles de brillo y carga USB,Accesorios,649.00,40,assets/products/lampara_led.png,Aluminio,40x15x15 cm,1 año

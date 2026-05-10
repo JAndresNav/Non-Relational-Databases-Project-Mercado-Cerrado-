@@ -8,14 +8,40 @@
 
 Este proyecto desarrolla un Sistema de Recomendaciones para E-Commerce que personaliza la experiencia de compra mediante el análisis del comportamiento de los usuarios, sus preferencias y las interacciones con productos. El sistema integra múltiples bases de datos no relacionales: MongoDB para el almacenamiento de productos, usuarios y carritos; Dgraph para gestionar relaciones y generar recomendaciones basadas en afinidad y reseñas; y Cassandra para registrar actividades y eventos del usuario. El objetivo es mejorar la búsqueda de productos, optimizar el inventario y ofrecer recomendaciones relevantes que faciliten la toma de decisiones y aumenten la eficiencia de la plataforma.
 
+# Setup
+
+## Python Environment
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+## MongoDB (Docker)
+```bash
+docker run -d --name mongo-mercado -p 27017:27017 mongo:7
+```
+
+## Ejecutar
+```bash
+python main.py
+```
+
 # Flujo de Trabajo
 
 ## MongoDB
 
-La interacción con MongoDB se centraliza en `connect.py` utilizando la librería `pymongo`. El flujo se divide en:
-* **Estructura:** En la carpeta `Mongo/` se encuentran los scripts de definición de colecciones e índices. Se aplican índices únicos para `email` en la colección de usuarios, e índices de texto y compuestos para `name` y `category` en productos para optimizar las búsquedas del catálogo.
-* **Población:** En `populate.py`, se cargan los documentos del catálogo y perfiles de usuario desde la carpeta `data/`. Se utiliza desnormalización en la colección `carts` (guardando nombre y precio al momento de la selección) para garantizar la integridad de los datos históricos.
-* **Consultas:** El archivo `main.py` utiliza el motor de agregación de MongoDB para calcular el "Top 10" de productos más populares mediante un pipeline de `$unwind`, `$match` y `$group`, resolviendo el requerimiento de popularidad para usuarios nuevos.
+La interacción con MongoDB se centraliza en `connect.py` utilizando la librería `pymongo`. La lógica se encuentra en `Mongo/mongo.py`.
+* **Conexión:** `connect.py` establece la conexión al contenedor Docker en `localhost:27017`, base de datos `mercado_cerrado`.
+* **Población:** Desde el menú, la opción "Populate" ejecuta `populate()` que crea y pobla todas las colecciones (products, users, carts, wishlists, user_preferences).
+* **Índices:** Índice único en `users.email`, compuesto en `products.category+price`, texto en `products.name`, e índices en `carts.user_id` y `user_preferences.user_id`.
+* **Consultas:** Cada opción RF1–RF7 del submenú MongoDB ejecuta funciones en `Mongo/mongo.py`.
 
 ## Dgraph
 

@@ -1,0 +1,6 @@
+name,email,created_at,account_status,addr_street,addr_city,addr_zip
+Carlos Mendoza,carlos.mendoza@email.com,2024-01-15,active,Av. Vallarta 1500,Guadalajara,44100
+María López,maria.lopez@email.com,2024-02-20,active,Calle Reforma 230,CDMX,06600
+Juan Pérez,juan.perez@email.com,2024-03-10,active,Blvd. Puerta de Hierro 45,Zapopan,45116
+Ana García,ana.garcia@email.com,2024-04-05,suspended,Av. Patria 800,Guadalajara,44630
+Roberto Sánchez,roberto.sanchez@email.com,2024-05-18,active,Calle Hidalgo 120,Monterrey,64000
