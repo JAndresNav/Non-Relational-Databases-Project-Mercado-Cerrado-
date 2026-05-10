@@ -1,4 +1,5 @@
-from Mongo.mongo import populate, drop_all, rf1_menu, rf2_menu, rf3_menu, rf4_menu, rf5_menu, rf6_create_indexes, rf7_top_products
+from populate import populate_mongo, drop_all_mongo
+from Mongo.mongo import rf1_menu, rf2_menu, rf3_menu, rf4_menu, rf5_menu, rf6_create_indexes, rf7_top_products
 
 
 def mongo_menu():
@@ -16,9 +17,9 @@ def mongo_menu():
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
-            populate()
+            populate_mongo()
         elif opt == "2":
-            drop_all()
+            drop_all_mongo()
         elif opt == "3":
             rf1_menu()
         elif opt == "4":
