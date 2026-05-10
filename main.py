@@ -1,0 +1,59 @@
+from Mongo.mongo import populate, drop_all, rf1_menu, rf2_menu, rf3_menu, rf4_menu, rf5_menu, rf6_create_indexes, rf7_top_products
+
+
+def mongo_menu():
+    while True:
+        print("\n--- MongoDB ---")
+        print("1. Populate (crear y poblar colecciones)")
+        print("2. Drop All (eliminar colecciones)")
+        print("3. RF1 - Catálogo de Productos")
+        print("4. RF2 - Perfil General del Usuario")
+        print("5. RF3 - Carrito de Compras Activo")
+        print("6. RF4 - Lista de Deseos (Wishlist)")
+        print("7. RF5 - Preferencias del Usuario")
+        print("8. RF6 - Crear Índices")
+        print("9. RF7 - Top 10 Productos Populares")
+        print("0. Regresar")
+        opt = input("Selecciona una opción: ")
+        if opt == "1":
+            populate()
+        elif opt == "2":
+            drop_all()
+        elif opt == "3":
+            rf1_menu()
+        elif opt == "4":
+            rf2_menu()
+        elif opt == "5":
+            rf3_menu()
+        elif opt == "6":
+            rf4_menu()
+        elif opt == "7":
+            rf5_menu()
+        elif opt == "8":
+            rf6_create_indexes()
+        elif opt == "9":
+            rf7_top_products()
+        elif opt == "0":
+            break
+
+
+def main_menu():
+    while True:
+        print("\n=== Mercado Cerrado ===")
+        print("1. MongoDB")
+        print("2. Dgraph")
+        print("3. Cassandra")
+        print("0. Salir")
+        opt = input("Selecciona una opción: ")
+        if opt == "1":
+            mongo_menu()
+        elif opt == "2":
+            pass
+        elif opt == "3":
+            pass
+        elif opt == "0":
+            break
+
+
+if __name__ == "__main__":
+    main_menu()

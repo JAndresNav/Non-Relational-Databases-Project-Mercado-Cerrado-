@@ -11,24 +11,24 @@ Este proyecto desarrolla un Sistema de Recomendaciones para E-Commerce que perso
 # Setup
 
 ## Python Environment
+
 ```bash
 python -m venv venv
 
 # Windows
-venv\Scripts\activate
-
-# macOS/Linux
-source venv/bin/activate
+venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
 ```
 
-## MongoDB (Docker)
+## Docker
+
 ```bash
-docker run -d --name mongo-mercado -p 27017:27017 mongo:7
+docker run -d --name mongo-mercado -p 27017:27017 mongo:latest
 ```
 
 ## Ejecutar
+
 ```bash
 python main.py
 ```
@@ -38,10 +38,11 @@ python main.py
 ## MongoDB
 
 La interacción con MongoDB se centraliza en `connect.py` utilizando la librería `pymongo`. La lógica se encuentra en `Mongo/mongo.py`.
-* **Conexión:** `connect.py` establece la conexión al contenedor Docker en `localhost:27017`, base de datos `mercado_cerrado`.
-* **Población:** Desde el menú, la opción "Populate" ejecuta `populate()` que crea y pobla todas las colecciones (products, users, carts, wishlists, user_preferences).
-* **Índices:** Índice único en `users.email`, compuesto en `products.category+price`, texto en `products.name`, e índices en `carts.user_id` y `user_preferences.user_id`.
-* **Consultas:** Cada opción RF1–RF7 del submenú MongoDB ejecuta funciones en `Mongo/mongo.py`.
+
+- **Conexión:** `connect.py` establece la conexión al contenedor Docker en `localhost:27017`, base de datos `mercado_cerrado`.
+- **Población:** Desde el menú, la opción "Populate" ejecuta `populate()` que crea y pobla todas las colecciones (products, users, carts, wishlists, user_preferences).
+- **Índices:** Índice único en `users.email`, compuesto en `products.category+price`, texto en `products.name`, e índices en `carts.user_id` y `user_preferences.user_id`.
+- **Consultas:** Cada opción RF1–RF7 del submenú MongoDB ejecuta funciones en `Mongo/mongo.py`.
 
 ## Dgraph
 
@@ -52,10 +53,12 @@ Las consultas en main.py se ejecutan mediante DQL usando la terminal, donde cada
 ## Cassandra
 
 El registro de logs masivos se gestiona mediante el driver `cassandra-driver` en `connect.py`.
-* **Esquema:** En la carpeta `Cassandra/` se encuentran los scripts `.cql` para la creación de las 7 tablas de actividad (vistas, búsquedas, logins, historial de precios, etc.). Se utiliza un diseño de "Query-First", donde la partición por `user_id` y el ordenamiento por clustering keys permiten lecturas de alta velocidad.
-* **Operación:** `populate.py` contiene la lógica para la ingesta de eventos masivos. La lectura en `main.py` recupera historiales cronológicos y eventos de interacción con el carrito sin necesidad de procesos de unión de tablas, aprovechando la arquitectura de columnas de Cassandra.
+
+- **Esquema:** En la carpeta `Cassandra/` se encuentran los scripts `.cql` para la creación de las 7 tablas de actividad (vistas, búsquedas, logins, historial de precios, etc.). Se utiliza un diseño de "Query-First", donde la partición por `user_id` y el ordenamiento por clustering keys permiten lecturas de alta velocidad.
+- **Operación:** `populate.py` contiene la lógica para la ingesta de eventos masivos. La lectura en `main.py` recupera historiales cronológicos y eventos de interacción con el carrito sin necesidad de procesos de unión de tablas, aprovechando la arquitectura de columnas de Cassandra.
 
 ## Estructura del Proyecto
+
 ```text
 project-name/
 ├── Cassandra/    # Scripts de creación de tablas (.cql)
@@ -66,3 +69,4 @@ project-name/
 ├── populate.py   # Plan detallado de población de datos
 ├── main.py       # Menú de consultas funcionales
 └── README.md     # Documentación del proyecto
+```
