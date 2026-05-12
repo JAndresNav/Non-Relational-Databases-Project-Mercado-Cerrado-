@@ -128,6 +128,7 @@ def drop_all_mongo():
 
 # Dgraph
 def populate_dgraph():
+    client = get_dgraph_client()
     #Schema
     schema = """
     type User { name email is_frequent bought wrote_review placed purchased rated }
