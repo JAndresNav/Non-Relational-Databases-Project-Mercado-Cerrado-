@@ -58,19 +58,19 @@ def dgraph_menu():
         elif opt == "2":
             drop_all_dgraph()
         elif opt == "3":
-            rf1_menuD
+            rf1_menuD()
         elif opt == "4":
-            rf2_menuD
+            rf2_menuD()
         elif opt == "5":
-            rf3_menuD
+            rf3_menuD()
         elif opt == "6":
-            rf4_menuD
+            rf4_menuD()
         elif opt == "7":
-            rf5_menuD
+            rf5_menuD()
         elif opt == "8":
-            rf6_menuD
+            rf6_menuD()
         elif opt == "9":
-            rf7_menuD
+            rf7_menuD()
         elif opt == "0":
             break
 
