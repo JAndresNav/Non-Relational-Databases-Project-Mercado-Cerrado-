@@ -26,7 +26,12 @@ pip install -r requirements.txt
 ```bash
 docker run -d --name mongo-mercado -p 27017:27017 mongo:latest
 ```
-
+```bash
+docker run -d --name dgraph-mercado -p 8080:8080 -p 9080:9080 dgraph/standalone:latest
+```
+```bash
+docker run --name ratel-mercado -d -p 8000:8000 dgraph/ratel:latest
+```
 ## Ejecutar
 
 ```bash
