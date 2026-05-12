@@ -1,6 +1,6 @@
 from populate import populate_mongo, drop_all_mongo, populate_dgraph, drop_all_dgraph
 from Mongo.mongo import rf1_menu, rf2_menu, rf3_menu, rf4_menu, rf5_menu, rf6_create_indexes, rf7_top_products
-#from Dgraph.dgraph import
+from Dgraph.dgraph import rf1_menuD, rf2_menuD, rf3_menuD, rf4_menuD, rf4_menuD, rf5_menuD, rf6_menuD, rf7_menuD
 
 def mongo_menu():
     while True:
@@ -39,7 +39,7 @@ def mongo_menu():
 
 def dgraph_menu():
     while True:
-        print("\n=== Dgraph ===")
+        print("\n--- Dgraph ---")
         print("1. Populate (crear esquema y poblar nodos/aristas)")
         print("2. Drop All (eliminar todo el grafo)")
         print("3. RF1 - Recomendaciones por Filtrado Colaborativo")
@@ -58,19 +58,19 @@ def dgraph_menu():
         elif opt == "2":
             drop_all_dgraph()
         elif opt == "3":
-            pass
+            rf1_menuD
         elif opt == "4":
-            pass
+            rf2_menuD
         elif opt == "5":
-            pass
+            rf3_menuD
         elif opt == "6":
-            pass
+            rf4_menuD
         elif opt == "7":
-            pass
+            rf5_menuD
         elif opt == "8":
-            pass
+            rf6_menuD
         elif opt == "9":
-            pass
+            rf7_menuD
         elif opt == "0":
             break
 
