@@ -1,6 +1,7 @@
 import csv
 import os
 import pydgraph
+import json
 from datetime import datetime
 from connect import get_mongo_db, get_dgraph_client
 
