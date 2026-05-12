@@ -37,6 +37,43 @@ def mongo_menu():
         elif opt == "0":
             break
 
+def dgraph_menu():
+    while True:
+        print("\n--- Dgraph ---")
+        print("1. Populate (crear esquema y poblar nodos/aristas)")
+        print("2. Drop All (eliminar todo el grafo)")
+        print("3. RF1 - Recomendaciones por Filtrado Colaborativo")
+        print("4. RF2 - Reseñas como Nodos de Conexión")
+        print("5. RF3 - Filtrado de Calidad y Clientes Frecuentes")
+        print("6. RF4 - Productos Adquiridos Juntos (Co-compra)")
+        print("7. RF5 - Grafo de Actividad del Usuario")
+        print("8. RF6 - Descubrimiento por Categoría Preferida")
+        print("9. RF7 - Recomendación por Compatibilidad")
+        print("0. Regresar")
+        
+        opt = input("Selecciona una opción: ")
+        
+        if opt == "1":
+            populate_dgraph()
+        elif opt == "2":
+            drop_all_dgraph()
+        elif opt == "3":
+            pass
+        elif opt == "4":
+            pass
+        elif opt == "5":
+            pass
+        elif opt == "6":
+            pass
+        elif opt == "7":
+            pass
+        elif opt == "8":
+            pass
+        elif opt == "9":
+            pass
+        elif opt == "0":
+            break
+
 
 def main_menu():
     while True:
