@@ -247,7 +247,7 @@ def populate_dgraph():
         txn.discard()
 
 def drop_all_dgraph():
-    op = client.operation(drop_all=True)
+    op = pydgraph.Operation(drop_all=True)
     client.alter(op)
     print("✓ Toda la base de datos Dgraph eliminada.")
 
