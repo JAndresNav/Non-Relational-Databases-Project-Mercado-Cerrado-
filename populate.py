@@ -157,7 +157,7 @@ def populate_dgraph():
     purchased: [uid] .
     rated: [uid] .
     """
-    client.alter(client.operation(schema=schema))
+    client.alter(pydgraph.Operation(schema=schema))
     print("✓ Esquema de Dgraph cargado.")
 
     mutations = []
