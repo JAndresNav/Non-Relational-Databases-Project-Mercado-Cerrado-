@@ -39,7 +39,7 @@ def mongo_menu():
 
 def dgraph_menu():
     while True:
-        print("\n--- Dgraph ---")
+        print("\n=== Dgraph ===")
         print("1. Populate (crear esquema y poblar nodos/aristas)")
         print("2. Drop All (eliminar todo el grafo)")
         print("3. RF1 - Recomendaciones por Filtrado Colaborativo")
