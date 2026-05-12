@@ -147,11 +147,40 @@ def populate_dgraph():
 
     # Schema
     schema = """
-    type User { name email is_frequent bought wrote_review placed purchased rated }
-    type Product { name price is_new belongs_to }
-    type Category { category_name }
-    type Review { rating text date review_for }
-    type Order { order_date total contains }
+    type User {
+        name: string
+        email: string
+        is_frequent: bool
+        bought: [uid]
+        wrote_review: [uid]
+        placed: [uid]
+        purchased: [uid]
+        rated: [uid]
+    }
+    
+    type Product {
+        name: string
+        price: float
+        is_new: bool
+        belongs_to: [uid]
+    }
+    
+    type Category {
+        category_name: string
+    }
+    
+    type Review {
+        rating: int
+        text: string
+        date: datetime
+        review_for: [uid]
+    }
+    
+    type Order {
+        order_date: datetime
+        total: float
+        contains: [uid]
+    }
 
     name: string @index(exact, term) .
     email: string @index(hash) .
