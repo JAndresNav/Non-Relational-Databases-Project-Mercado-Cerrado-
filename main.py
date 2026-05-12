@@ -1,6 +1,6 @@
-from populate import populate_mongo, drop_all_mongo
+from populate import populate_mongo, drop_all_mongo, populate_dgraph, drop_all_dgraph
 from Mongo.mongo import rf1_menu, rf2_menu, rf3_menu, rf4_menu, rf5_menu, rf6_create_indexes, rf7_top_products
-
+#from Dgraph.dgraph import
 
 def mongo_menu():
     while True:
