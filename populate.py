@@ -176,6 +176,8 @@ def populate_dgraph():
     date: datetime @index(hour) .
     order_date: datetime @index(hour) .
     category_name: string @index(exact, term) .
+    text: string .
+    total: float .
 
     bought: [uid] @reverse .
     contains: [uid] @reverse .
