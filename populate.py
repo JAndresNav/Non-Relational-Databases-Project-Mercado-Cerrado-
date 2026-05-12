@@ -215,7 +215,7 @@ def populate_dgraph():
             counts["categories"] += 1
 
     # --- Users ---
-    with open(os.path.join(DATA_DIR_D, "users.csv"), encoding="utf-8") as f:
+    with open(os.path.join(DATA_DIR_D, "user.csv"), encoding="utf-8") as f:
         for row in csv.DictReader(f):
             mutations.append({
                 "uid": f"_:{row['id_user']}", "dgraph.type": "User",
@@ -224,7 +224,7 @@ def populate_dgraph():
             counts["users"] += 1
 
     # --- Products ---
-    with open(os.path.join(DATA_DIR_D, "products.csv"), encoding="utf-8") as f:
+    with open(os.path.join(DATA_DIR_D, "product.csv"), encoding="utf-8") as f:
         for row in csv.DictReader(f):
             mutations.append({
                 "uid": f"_:{row['id_prod']}", "dgraph.type": "Product",
@@ -248,7 +248,7 @@ def populate_dgraph():
             counts["reviews"] += 1
 
     # --- Orders ---
-    with open(os.path.join(DATA_DIR_D, "orders.csv"), encoding="utf-8") as f:
+    with open(os.path.join(DATA_DIR_D, "order.csv"), encoding="utf-8") as f:
         for row in csv.DictReader(f):
             mutations.append({
                 "uid": f"_:{row['id_user']}",
