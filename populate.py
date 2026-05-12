@@ -1,12 +1,13 @@
 import csv
 import os
 from datetime import datetime
-from connect import get_mongo_db
+from connect import get_mongo_db, get_dgraph_client
 
 # MongoDB
 
 db = get_mongo_db()
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "Mongo")
+DATA_DIR_D = os.path.join(os.path.dirname(__file__), "data", "Dgraph")
 
 
 def populate_mongo():
@@ -125,6 +126,129 @@ def drop_all_mongo():
         db[col].drop()
     print("✓ Todas las colecciones de MongoDB eliminadas.")
 
+# Dgraph
+def populate_dgraph():
+    #Schema
+    schema = """
+    type User { name email is_frequent bought wrote_review placed purchased rated }
+    type Product { name price is_new belongs_to }
+    type Category { category_name }
+    type Review { rating text date review_for }
+    type Order { order_date total contains }
+
+    name: string @index(exact, term) .
+    email: string @index(hash) .
+    is_frequent: bool @index(bool) .
+    price: float @index(float) .
+    is_new: bool @index(bool) .
+    rating: int @index(int) .
+    date: datetime @index(hour) .
+    order_date: datetime @index(hour) .
+    category_name: string @index(exact, term) .
+
+    bought: [uid] @reverse .
+    contains: [uid] @reverse .
+    belongs_to: [uid] @reverse .
+    wrote_review: [uid] .
+    review_for: [uid] .
+    placed: [uid] .
+    purchased: [uid] .
+    rated: [uid] .
+    """
+    client.alter(client.operation(schema=schema))
+    print("✓ Esquema de Dgraph cargado.")
+
+    mutations = []
+
+    # --- Categories ---
+    with open(os.path.join(DATA_DIR_D, "categories.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mutations.append({
+                "uid": f"_:{row['id_cat']}", 
+                "dgraph.type": "Category", 
+                "category_name": row['name']
+            })
+        print("  Categorías preparadas para inserción.")
+
+    # --- Users ---
+    with open(os.path.join(DATA_DIR_D, "user.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mutations.append({
+                "uid": f"_:{row['id_user']}", 
+                "dgraph.type": "User",
+                "name": row['name'], 
+                "email": row['email'], 
+                "is_frequent": row['is_frequent'].lower() == 'true'
+            })
+        print("  Usuarios preparados para inserción.")
+
+    # --- Products ---
+    with open(os.path.join(DATA_DIR_D, "product.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mutations.append({
+                "uid": f"_:{row['id_prod']}", 
+                "dgraph.type": "Product",
+                "name": row['name'], 
+                "price": float(row['price']), 
+                "is_new": row['is_new'].lower() == 'true',
+                "belongs_to": {"uid": f"_:{row['id_cat']}"} 
+            })
+        print("  Productos preparados para inserción.")
+
+    # --- Reviews ---
+    with open(os.path.join(DATA_DIR_D, "reviews.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mutations.append({
+                "uid": f"_:{row['id_user']}",
+                "wrote_review": {
+                    "uid": f"_:{row['id_review']}", 
+                    "dgraph.type": "Review",
+                    "rating": int(row['rating']), 
+                    "text": row['text'], 
+                    "date": row['date'],
+                    "review_for": {"uid": f"_:{row['id_prod']}"}
+                },
+                "rated": {"uid": f"_:{row['id_prod']}"}
+            })
+        print("  Reseñas preparadas para inserción.")
+
+    # --- Orders ---
+    with open(os.path.join(DATA_DIR_D, "order.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mutations.append({
+                "uid": f"_:{row['id_user']}",
+                "bought": {"uid": f"_:{row['id_prod']}"},
+                "purchased": {"uid": f"_:{row['id_prod']}"},
+                "placed": {
+                    "uid": f"_:{row['id_order']}", 
+                    "dgraph.type": "Order",
+                    "order_date": row['order_date'], 
+                    "total": float(row['total']),
+                    "contains": {"uid": f"_:{row['id_prod']}"}
+                }
+            })
+        print("  Órdenes preparadas para inserción.")
+
+    txn = client.txn()
+    try:
+        txn.mutate(set_obj=mutations)
+        txn.commit()
+        print("\n✓ Populate completado en Dgraph.")
+    except Exception as e:
+        print(f"\nError al insertar en Dgraph: {e}")
+    finally:
+        txn.discard()
+
+def drop_all_dgraph():
+    op = client.operation(drop_all=True)
+    client.alter(op)
+    print("✓ Toda la base de datos Dgraph eliminada.")
 
 if __name__ == "__main__":
     populate_mongo()
+    populate_dgraph()
