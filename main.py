@@ -86,7 +86,7 @@ def main_menu():
         if opt == "1":
             mongo_menu()
         elif opt == "2":
-            pass
+            dgraph_menu()
         elif opt == "3":
             pass
         elif opt == "0":
