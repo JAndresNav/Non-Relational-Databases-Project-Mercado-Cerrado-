@@ -209,7 +209,7 @@ def populate_dgraph():
     mutations = []
 
     # --- Categories ---
-    with open(os.path.join(DATA_DIR_DG, "categories.csv"), encoding="utf-8") as f:
+    with open(os.path.join(DATA_DIR_D, "categories.csv"), encoding="utf-8") as f:
         for row in csv.DictReader(f):
             mutations.append({"uid": f"_:{row['id_cat']}", "dgraph.type": "Category", "category_name": row['name']})
             counts["categories"] += 1
