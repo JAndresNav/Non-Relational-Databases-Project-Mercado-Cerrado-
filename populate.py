@@ -132,11 +132,40 @@ def populate_dgraph():
     client = get_dgraph_client()
     #Schema
     schema = """
-    type User { name email is_frequent bought wrote_review placed purchased rated }
-    type Product { name price is_new belongs_to }
-    type Category { category_name }
-    type Review { rating text date review_for }
-    type Order { order_date total contains }
+    type User { 
+        name 
+        email 
+        is_frequent 
+        bought 
+        wrote_review 
+        placed 
+        purchased 
+        rated 
+    }
+    
+    type Product { 
+        name 
+        price 
+        is_new 
+        belongs_to 
+    }
+    
+    type Category { 
+        category_name 
+    }
+    
+    type Review { 
+        rating 
+        text 
+        date 
+        review_for 
+    }
+    
+    type Order { 
+        order_date 
+        total 
+        contains 
+    }
 
     name: string @index(exact, term) .
     email: string @index(hash) .
