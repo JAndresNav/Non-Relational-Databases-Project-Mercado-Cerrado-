@@ -130,42 +130,27 @@ def drop_all_mongo():
 # Dgraph
 def populate_dgraph():
     client = get_dgraph_client()
-    #Schema
+    
+    txn = client.txn()
+    try:
+        for tipo in ["Product", "User", "Category", "Review", "Order"]:
+            res = txn.query(f"{{ nodos(func: type({tipo})) {{ uid }} }}")
+            uids = [{"uid": n["uid"]} for n in json.loads(res.json).get("nodos", [])]
+            if uids:
+                txn.mutate(del_obj=uids)
+        txn.commit()
+    except Exception as e:
+        print(f"Error al limpiar Dgraph: {e}")
+    finally:
+        txn.discard()
+
+    # Schema
     schema = """
-    type User { 
-        name 
-        email 
-        is_frequent 
-        bought 
-        wrote_review 
-        placed 
-        purchased 
-        rated 
-    }
-    
-    type Product { 
-        name 
-        price 
-        is_new 
-        belongs_to 
-    }
-    
-    type Category { 
-        category_name 
-    }
-    
-    type Review { 
-        rating 
-        text 
-        date 
-        review_for 
-    }
-    
-    type Order { 
-        order_date 
-        total 
-        contains 
-    }
+    type User { name email is_frequent bought wrote_review placed purchased rated }
+    type Product { name price is_new belongs_to }
+    type Category { category_name }
+    type Review { rating text date review_for }
+    type Order { order_date total contains }
 
     name: string @index(exact, term) .
     email: string @index(hash) .
@@ -189,89 +174,75 @@ def populate_dgraph():
     rated: [uid] .
     """
     client.alter(pydgraph.Operation(schema=schema))
-    print("✓ Esquema de Dgraph cargado.")
-
+    
+    counts = {"categories": 0, "users": 0, "products": 0, "reviews": 0, "orders": 0}
     mutations = []
 
     # --- Categories ---
-    with open(os.path.join(DATA_DIR_D, "categories.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            mutations.append({
-                "uid": f"_:{row['id_cat']}", 
-                "dgraph.type": "Category", 
-                "category_name": row['name']
-            })
-        print("  Categorías preparadas para inserción.")
+    with open(os.path.join(DATA_DIR_DG, "categories.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            mutations.append({"uid": f"_:{row['id_cat']}", "dgraph.type": "Category", "category_name": row['name']})
+            counts["categories"] += 1
 
     # --- Users ---
-    with open(os.path.join(DATA_DIR_D, "user.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
+    with open(os.path.join(DATA_DIR_D, "users.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
             mutations.append({
-                "uid": f"_:{row['id_user']}", 
-                "dgraph.type": "User",
-                "name": row['name'], 
-                "email": row['email'], 
-                "is_frequent": row['is_frequent'].lower() == 'true'
+                "uid": f"_:{row['id_user']}", "dgraph.type": "User",
+                "name": row['name'], "email": row['email'], "is_frequent": row['is_frequent'].lower() == 'true'
             })
-        print("  Usuarios preparados para inserción.")
+            counts["users"] += 1
 
     # --- Products ---
-    with open(os.path.join(DATA_DIR_D, "product.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
+    with open(os.path.join(DATA_DIR_D, "products.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
             mutations.append({
-                "uid": f"_:{row['id_prod']}", 
-                "dgraph.type": "Product",
-                "name": row['name'], 
-                "price": float(row['price']), 
-                "is_new": row['is_new'].lower() == 'true',
+                "uid": f"_:{row['id_prod']}", "dgraph.type": "Product",
+                "name": row['name'], "price": float(row['price']), "is_new": row['is_new'].lower() == 'true',
                 "belongs_to": {"uid": f"_:{row['id_cat']}"} 
             })
-        print("  Productos preparados para inserción.")
+            counts["products"] += 1
 
     # --- Reviews ---
     with open(os.path.join(DATA_DIR_D, "reviews.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
+        for row in csv.DictReader(f):
             mutations.append({
                 "uid": f"_:{row['id_user']}",
                 "wrote_review": {
-                    "uid": f"_:{row['id_review']}", 
-                    "dgraph.type": "Review",
-                    "rating": int(row['rating']), 
-                    "text": row['text'], 
-                    "date": row['date'],
+                    "uid": f"_:{row['id_review']}", "dgraph.type": "Review",
+                    "rating": int(row['rating']), "text": row['text'], "date": row['date'],
                     "review_for": {"uid": f"_:{row['id_prod']}"}
                 },
                 "rated": {"uid": f"_:{row['id_prod']}"}
             })
-        print("  Reseñas preparadas para inserción.")
+            counts["reviews"] += 1
 
     # --- Orders ---
-    with open(os.path.join(DATA_DIR_D, "order.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
+    with open(os.path.join(DATA_DIR_D, "orders.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
             mutations.append({
                 "uid": f"_:{row['id_user']}",
                 "bought": {"uid": f"_:{row['id_prod']}"},
                 "purchased": {"uid": f"_:{row['id_prod']}"},
                 "placed": {
-                    "uid": f"_:{row['id_order']}", 
-                    "dgraph.type": "Order",
-                    "order_date": row['order_date'], 
-                    "total": float(row['total']),
+                    "uid": f"_:{row['id_order']}", "dgraph.type": "Order",
+                    "order_date": row['order_date'], "total": float(row['total']),
                     "contains": {"uid": f"_:{row['id_prod']}"}
                 }
             })
-        print("  Órdenes preparadas para inserción.")
+            counts["orders"] += 1
 
     txn = client.txn()
     try:
         txn.mutate(set_obj=mutations)
         txn.commit()
+        print(f"  categories: {counts['categories']} nodos insertados.")
+        print(f"  users: {counts['users']} nodos insertados.")
+        print(f"  products: {counts['products']} nodos insertados.")
+        print(f"  reviews: {counts['reviews']} nodos insertados.")
+        print(f"  orders: {counts['orders']} nodos insertados.")
         print("\n✓ Populate completado en Dgraph.")
+        
     except Exception as e:
         print(f"\nError al insertar en Dgraph: {e}")
     finally:
