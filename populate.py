@@ -2,8 +2,88 @@ import csv
 import os
 import pydgraph
 import json
+import uuid
 from datetime import datetime
-from connect import get_mongo_db, get_dgraph_client
+from connect import get_mongo_db, get_dgraph_client, get_cassandra_session
+
+# Cassandra
+def populate_cassandra():
+    session = get_cassandra_session(keyspace=None)
+    
+    cql_path = os.path.join(os.path.dirname(__file__), "Cassandra", "schema.cql")
+    with open(cql_path, 'r', encoding="utf-8") as f:
+        full_sql = f.read()
+        commands = full_sql.split(';')
+        for cmd in commands:
+            clean_cmd = cmd.strip()
+            if clean_cmd:
+                session.execute(clean_cmd)
+    
+    session.set_keyspace('mercado_cerrado_logs')
+    DATA_DIR_C = os.path.join(os.path.dirname(__file__), "data", "Cassandra")
+
+    # --- Product Views (RF1) ---
+    with open(os.path.join(DATA_DIR_C, "product_views.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            query = "INSERT INTO product_views_by_user (user_id, view_timestamp, product_id, category, price) VALUES (%s, %s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['view_timestamp'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['category'], float(row['price'])])
+    
+    # --- Searches (RF2) ---
+    with open(os.path.join(DATA_DIR_C, "searches.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            query = "INSERT INTO search_history_by_user (user_id, search_timestamp, query, results_count) VALUES (%s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['search_timestamp'], "%Y-%m-%d %H:%M:%S"), row['query'], int(row['results_count'])])
+
+    # --- Purchases (RF3) ---
+    with open(os.path.join(DATA_DIR_C, "purchases.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            products = row['product_names'].split(";")
+            query = "INSERT INTO purchase_history_by_user (user_id, purchase_timestamp, order_id, product_names, total_amount) VALUES (%s, %s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['purchase_timestamp'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['order_id']), products, float(row['total_amount'])])
+
+    # --- Logins (RF4) ---
+    with open(os.path.join(DATA_DIR_C, "logins.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            query = "INSERT INTO login_logs_by_user (user_id, login_timestamp, ip_address, device) VALUES (%s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['login_timestamp'], "%Y-%m-%d %H:%M:%S"), row['ip_address'], row['device']])
+
+    # --- Cart Activity (RF5) ---
+    with open(os.path.join(DATA_DIR_C, "cart_activity.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            query = "INSERT INTO cart_activity_by_user (user_id, activity_timestamp, action, product_id, quantity) VALUES (%s, %s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['activity_timestamp'], "%Y-%m-%d %H:%M:%S"), row['action'], uuid.UUID(row['product_id']), int(row['quantity'])])
+
+    # --- Price Changes (RF6) ---
+    with open(os.path.join(DATA_DIR_C, "price_changes.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            query = "INSERT INTO price_changes_by_product (product_id, change_timestamp, old_price, new_price, discount_pct) VALUES (%s, %s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['product_id']), datetime.strptime(row['change_timestamp'], "%Y-%m-%d %H:%M:%S"), float(row['old_price']), float(row['new_price']), float(row['discount_pct'])])
+
+    # --- Favorites (RF7) ---
+    with open(os.path.join(DATA_DIR_C, "favorites.csv"), encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            query = "INSERT INTO favorite_activity_by_user (user_id, fav_timestamp, product_id, note) VALUES (%s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['fav_timestamp'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['note']])
+
+    print("\n✓ Populate completado en Cassandra.")
+
+def drop_all_cassandra():
+    session = get_cassandra_session()
+    tables = [
+        "product_views_by_user", "search_history_by_user", "purchase_history_by_user",
+        "login_logs_by_user", "cart_activity_by_user", "price_changes_by_product",
+        "favorite_activity_by_user"
+    ]
+    for t in tables:
+        session.execute(f"TRUNCATE {t}")
+    print("✓ Todas las tablas de Cassandra han sido vaciadas.")
 
 # MongoDB
 

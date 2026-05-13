@@ -32,6 +32,10 @@ docker run -d --name dgraph-mercado -p 8080:8080 -p 9080:9080 dgraph/standalone:
 ```bash
 docker run --name ratel-mercado -d -p 8000:8000 dgraph/ratel:latest
 ```
+```bash
+docker run -d --name cassandra-mercado -p 9042:9042 cassandra:latest
+```
+
 ## Ejecutar
 
 ```bash
@@ -55,19 +59,23 @@ En Dgraph, la conexión se establece desde connect.py utilizando el cliente ofic
 
 ## Cassandra
 
-El registro de logs masivos se gestiona mediante el driver `cassandra-driver` en `connect.py`.
+El registro de logs y auditoría se gestiona mediante el driver `cassandra-driver` en `connect.py`.
 
-- **Esquema:** En la carpeta `Cassandra/` se encuentran los scripts `.cql` para la creación de las 7 tablas de actividad (vistas, búsquedas, logins, historial de precios, etc.). Se utiliza un diseño de "Query-First", donde la partición por `user_id` y el ordenamiento por clustering keys permiten lecturas de alta velocidad.
-- **Operación:** `populate.py` contiene la lógica para la ingesta de eventos masivos. La lectura en `main.py` recupera historiales cronológicos y eventos de interacción con el carrito sin necesidad de procesos de unión de tablas, aprovechando la arquitectura de columnas de Cassandra.
+- **Esquema:** Ubicado en `Cassandra/schema.cql`. Implementa un diseño **"Query-First"** con 7 tablas de logs (vistas, búsquedas, compras, logins, carritos, precios y favoritos). Las tablas utilizan particiones por ID y clustering keys cronológicas para optimizar la velocidad de lectura.
+- **Operación:** `populate.py` contiene la lógica `populate_cassandra()` para la creación automática del esquema e ingesta de datos desde archivos CSV en `data/Cassandra/`.
+- **Consultas:** El módulo `Cassandra/cassandra.py` centraliza el menú de Cassandra y las consultas para recuperar los distintos tipos de logs de actividad.
 
-## Estructura del Proyecto
+# Estructura del Proyecto
 
 ```text
 project-name/
-├── Cassandra/    # Scripts de creación de tablas (.cql)
+├── Cassandra/    # Lógica de Cassandra y schema.cql
 ├── Mongo/        # Definición de esquemas e índices
 ├── Dgraph/       # Esquema de predicados y tipos
-├── data/         # Archivos fuente (JSON/CSV)
+├── data/         # Archivos fuente (CSVs por motor)
+│   ├── Mongo/
+│   ├── Dgraph/
+│   └── Cassandra/
 ├── connect.py    # Gestión de conexiones a las 3 BD
 ├── populate.py   # Plan detallado de población de datos
 ├── main.py       # Menú de consultas funcionales
