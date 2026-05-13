@@ -55,7 +55,12 @@ La interacción con MongoDB se centraliza en `connect.py` utilizando la librerí
 
 ## Dgraph
 
-En Dgraph, la conexión se establece desde connect.py utilizando el cliente oficial pydgraph en Python.
+La interacción se centraliza en `connect.py` utilizando la librería oficial `pydgraph`. La lógica de consulta se encuentra en `Dgraph/dgraph.py`.
+- **Conexión:** `connect.py` establece la conexión al contenedor Docker en `localhost:9080`. Se utiliza un `DgraphClientStub` para la comunicación de bajo nivel y un `DgraphClient` para la ejecución de operaciones.
+- **Población y Esquema:** La opción "Populate" en el menú ejecuta `populate_dgraph()`. Esta función primero define un Esquema Estricto (tipos y predicados) antes de insertar datos. Utiliza Blank Nodes (_:id) para crear relaciones de red instantáneas entre nodos.
+- **Índices:** Se utilizan índices de tipo `hash` para emails, `exact` y `term` para búsqueda de nombres, y tipos básicos (bool, float, int, datetime) para filtrado.
+- **Reversas:** Se aplica `@reverse` en aristas clave como contains, bought, placed y belongs_to.
+- **Consultas:** Cada opción RF1–RF7 del submenú Dgraph ejecuta funciones que abren una transacción (txn) y en `Dgraph/dgraph.py`.
 
 ## Cassandra
 
