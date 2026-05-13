@@ -11,12 +11,13 @@ def get_mongo_db():
     return client["mercado_cerrado"]
 
 def get_cassandra_session(keyspace='mercado_cerrado_logs'):
-    cluster = Cluster(['127.0.0.1'])
+    cluster = Cluster(['127.0.0.1'], port=9042)
     session = cluster.connect()
     
-    if keyspace:
-        try:
-            session.set_keyspace(keyspace)
-        except Exception:
-            pass
+    try:
+        session.set_keyspace(keyspace)
+    except Exception as e:
+        print(f"El Keyspace '{keyspace}' no existe o no se pudo conectar: {e}")
+        print("Recuerda crearlo en cqlsh primero.")
+        
     return session
