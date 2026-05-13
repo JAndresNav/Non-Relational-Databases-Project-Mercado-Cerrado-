@@ -4,78 +4,82 @@ WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
 USE mercado_cerrado_logs;
 
--- 1. Registro de Vistas de Productos
+-- Eliminar tablas existentes para asegurar actualización de esquema
+DROP TABLE IF EXISTS product_views_by_user;
+DROP TABLE IF EXISTS search_history_by_user;
+DROP TABLE IF EXISTS purchase_history_by_user;
+DROP TABLE IF EXISTS login_logs_by_user;
+DROP TABLE IF EXISTS cart_activity_by_user;
+DROP TABLE IF EXISTS user_price_history;
+DROP TABLE IF EXISTS favorite_activity_by_user;
+-- Tabla vieja por si acaso existía
+DROP TABLE IF EXISTS price_changes_by_product;
+
+-- 1. Registro de Vistas de Productos (RF1)
 -- Consulta: Ver los últimos productos que un usuario ha visitado.
 CREATE TABLE IF NOT EXISTS product_views_by_user (
     user_id UUID,
-    view_timestamp TIMESTAMP,
+    viewed_at TIMESTAMP,
     product_id UUID,
+    product_name TEXT,
     category TEXT,
-    price DECIMAL,
-    PRIMARY KEY ((user_id), view_timestamp)
-) WITH CLUSTERING ORDER BY (view_timestamp DESC);
+    PRIMARY KEY ((user_id), viewed_at)
+) WITH CLUSTERING ORDER BY (viewed_at DESC);
 
--- 2. Historial de Búsquedas
+-- 2. Historial de Búsquedas (RF2)
 -- Consulta: Ver qué términos ha buscado el usuario recientemente.
 CREATE TABLE IF NOT EXISTS search_history_by_user (
     user_id UUID,
-    search_timestamp TIMESTAMP,
-    query TEXT,
-    results_count INT,
-    PRIMARY KEY ((user_id), search_timestamp)
-) WITH CLUSTERING ORDER BY (search_timestamp DESC);
+    searched_at TIMESTAMP,
+    search_query TEXT,
+    PRIMARY KEY ((user_id), searched_at)
+) WITH CLUSTERING ORDER BY (searched_at DESC);
 
 -- 3. Historial de Compras (RF3)
 -- Consulta: Ver el historial de pedidos completados por el usuario.
 CREATE TABLE IF NOT EXISTS purchase_history_by_user (
     user_id UUID,
-    purchase_timestamp TIMESTAMP,
+    purchase_time TIMESTAMP,
     order_id UUID,
-    -- Se usa LIST en lugar de SET para permitir productos duplicados en un mismo ticket
-    -- y mantener el orden de inserción de los artículos (orden del carrito).
     product_names LIST<TEXT>,
     total_amount DECIMAL,
-    PRIMARY KEY ((user_id), purchase_timestamp)
-) WITH CLUSTERING ORDER BY (purchase_timestamp DESC);
+    status TEXT,
+    PRIMARY KEY ((user_id), purchase_time)
+) WITH CLUSTERING ORDER BY (purchase_time DESC);
 
--- 4. Logs de Inicio de Sesión
--- Consulta: Rastrear accesos por seguridad y ubicación.
+-- 4. Logs de Inicio de Sesión (RF4)
+-- Consulta: Rastrear accesos por seguridad.
 CREATE TABLE IF NOT EXISTS login_logs_by_user (
     user_id UUID,
-    login_timestamp TIMESTAMP,
-    ip_address TEXT,
-    device TEXT,
-    PRIMARY KEY ((user_id), login_timestamp)
-) WITH CLUSTERING ORDER BY (login_timestamp DESC);
+    logged_at TIMESTAMP,
+    PRIMARY KEY ((user_id), logged_at)
+) WITH CLUSTERING ORDER BY (logged_at DESC);
 
--- 5. Actividad del Carrito (Logs de eventos)
+-- 5. Actividad del Carrito (RF5)
 -- Consulta: Ver si el usuario agrega/quita productos frecuentemente.
 CREATE TABLE IF NOT EXISTS cart_activity_by_user (
     user_id UUID,
-    activity_timestamp TIMESTAMP,
+    event_time TIMESTAMP,
+    product_id UUID,
     action TEXT, -- 'ADD' o 'REMOVE'
-    product_id UUID,
-    quantity INT,
-    PRIMARY KEY ((user_id), activity_timestamp)
-) WITH CLUSTERING ORDER BY (activity_timestamp DESC);
+    PRIMARY KEY ((user_id), event_time)
+) WITH CLUSTERING ORDER BY (event_time DESC);
 
--- 6. Alertas/Cambios de Precio
--- Consulta: Ver el histórico de precios de un producto específico.
-CREATE TABLE IF NOT EXISTS price_changes_by_product (
+-- 6. Historial de Precios Observados (RF6)
+-- Consulta: Analizar qué precio visualizó un usuario para un producto.
+CREATE TABLE IF NOT EXISTS user_price_history (
+    user_id UUID,
     product_id UUID,
-    change_timestamp TIMESTAMP,
-    old_price DECIMAL,
-    new_price DECIMAL,
-    discount_pct FLOAT,
-    PRIMARY KEY ((product_id), change_timestamp)
-) WITH CLUSTERING ORDER BY (change_timestamp DESC);
+    captured_at TIMESTAMP,
+    price_seen DECIMAL,
+    PRIMARY KEY ((user_id), product_id, captured_at)
+) WITH CLUSTERING ORDER BY (product_id ASC, captured_at DESC);
 
--- 7. Registro de Favoritos (Añadidos)
+-- 7. Registro de Favoritos (RF7)
 -- Consulta: Ver cuándo un usuario marcó productos como favoritos.
 CREATE TABLE IF NOT EXISTS favorite_activity_by_user (
     user_id UUID,
-    fav_timestamp TIMESTAMP,
+    added_at TIMESTAMP,
     product_id UUID,
-    note TEXT,
-    PRIMARY KEY ((user_id), fav_timestamp)
-) WITH CLUSTERING ORDER BY (fav_timestamp DESC);
+    PRIMARY KEY ((user_id), added_at)
+) WITH CLUSTERING ORDER BY (added_at DESC);

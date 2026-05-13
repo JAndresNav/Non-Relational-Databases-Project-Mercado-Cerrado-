@@ -1,3 +1,4 @@
-user_id,purchase_timestamp,order_id,product_names,total_amount
-550e8400-e29b-41d4-a716-446655440000,2024-05-12 15:20:00,f47ac10b-58cc-4372-a567-0e02b2c3d479,"Laptop Gamer Pro;Mouse Inalámbrico;Teclado Mecánico RGB",30098.49
-660f9501-f30c-52e5-b827-557766551111,2024-05-13 18:45:00,d9b2b345-3b0f-4824-9b22-876fb9033321,"Audífonos Bluetooth;Audífonos Bluetooth",3799.00
+user_id,purchase_time,order_id,product_names,total_amount,status
+550e8400-e29b-41d4-a716-446655440000,2024-05-12 15:20:00,f47ac10b-58cc-4372-a567-0e02b2c3d479,"Laptop Gamer Pro;Mouse Inalámbrico;Teclado Mecánico RGB",30098.49,COMPLETED
+7d3c2a1b-0e9f-4b8c-a1d2-e3f4a5b6c7d8,2024-05-13 09:10:00,e5a6b7c8-d9e0-4123-a456-b7c8d9e0a1b2,"iPhone 15 Pro;Funda Transparente",26500.00,COMPLETED
+550e8400-e29b-41d4-a716-446655440000,2024-05-14 18:45:00,d4c3b2a1-e0f9-4876-b543-a2b1c0d9e8f7,"Silla Gamer Ergonómica",5499.00,SHIPPED

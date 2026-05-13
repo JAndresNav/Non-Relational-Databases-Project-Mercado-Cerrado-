@@ -26,51 +26,51 @@ def populate_cassandra():
     with open(os.path.join(DATA_DIR_C, "product_views.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO product_views_by_user (user_id, view_timestamp, product_id, category, price) VALUES (%s, %s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['view_timestamp'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['category'], float(row['price'])])
+            query = "INSERT INTO product_views_by_user (user_id, viewed_at, product_id, product_name, category) VALUES (%s, %s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['viewed_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['product_name'], row['category']])
     
     # --- Searches (RF2) ---
     with open(os.path.join(DATA_DIR_C, "searches.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO search_history_by_user (user_id, search_timestamp, query, results_count) VALUES (%s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['search_timestamp'], "%Y-%m-%d %H:%M:%S"), row['query'], int(row['results_count'])])
+            query = "INSERT INTO search_history_by_user (user_id, searched_at, search_query) VALUES (%s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['searched_at'], "%Y-%m-%d %H:%M:%S"), row['search_query']])
 
     # --- Purchases (RF3) ---
     with open(os.path.join(DATA_DIR_C, "purchases.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             products = row['product_names'].split(";")
-            query = "INSERT INTO purchase_history_by_user (user_id, purchase_timestamp, order_id, product_names, total_amount) VALUES (%s, %s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['purchase_timestamp'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['order_id']), products, float(row['total_amount'])])
+            query = "INSERT INTO purchase_history_by_user (user_id, purchase_time, order_id, product_names, total_amount, status) VALUES (%s, %s, %s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['purchase_time'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['order_id']), products, float(row['total_amount']), row['status']])
 
     # --- Logins (RF4) ---
     with open(os.path.join(DATA_DIR_C, "logins.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO login_logs_by_user (user_id, login_timestamp, ip_address, device) VALUES (%s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['login_timestamp'], "%Y-%m-%d %H:%M:%S"), row['ip_address'], row['device']])
+            query = "INSERT INTO login_logs_by_user (user_id, logged_at) VALUES (%s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['logged_at'], "%Y-%m-%d %H:%M:%S")])
 
     # --- Cart Activity (RF5) ---
     with open(os.path.join(DATA_DIR_C, "cart_activity.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO cart_activity_by_user (user_id, activity_timestamp, action, product_id, quantity) VALUES (%s, %s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['activity_timestamp'], "%Y-%m-%d %H:%M:%S"), row['action'], uuid.UUID(row['product_id']), int(row['quantity'])])
+            query = "INSERT INTO cart_activity_by_user (user_id, event_time, product_id, action) VALUES (%s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['event_time'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['action']])
 
     # --- Price Changes (RF6) ---
-    with open(os.path.join(DATA_DIR_C, "price_changes.csv"), encoding="utf-8") as f:
+    with open(os.path.join(DATA_DIR_C, "user_price_history.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO price_changes_by_product (product_id, change_timestamp, old_price, new_price, discount_pct) VALUES (%s, %s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['product_id']), datetime.strptime(row['change_timestamp'], "%Y-%m-%d %H:%M:%S"), float(row['old_price']), float(row['new_price']), float(row['discount_pct'])])
+            query = "INSERT INTO user_price_history (user_id, product_id, captured_at, price_seen) VALUES (%s, %s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), uuid.UUID(row['product_id']), datetime.strptime(row['captured_at'], "%Y-%m-%d %H:%M:%S"), float(row['price_seen'])])
 
     # --- Favorites (RF7) ---
     with open(os.path.join(DATA_DIR_C, "favorites.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO favorite_activity_by_user (user_id, fav_timestamp, product_id, note) VALUES (%s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['fav_timestamp'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['note']])
+            query = "INSERT INTO favorite_activity_by_user (user_id, added_at, product_id) VALUES (%s, %s, %s)"
+            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['added_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id'])])
 
     print("\n✓ Populate completado en Cassandra.")
 
@@ -78,7 +78,7 @@ def drop_all_cassandra():
     session = get_cassandra_session(keyspace='mercado_cerrado_logs')
     tables = [
         "product_views_by_user", "search_history_by_user", "purchase_history_by_user",
-        "login_logs_by_user", "cart_activity_by_user", "price_changes_by_product",
+        "login_logs_by_user", "cart_activity_by_user", "user_price_history",
         "favorite_activity_by_user"
     ]
     for t in tables:
