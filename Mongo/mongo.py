@@ -3,6 +3,15 @@ from connect import get_mongo_db
 
 db = get_mongo_db()
 
+RF_DESCRIPTIONS = {
+    1: "RF1 - Catálogo de Productos: Almacenar la información general de cada producto disponible en la tienda.\n  Colección: products | Campos: name, category, price, stock, image, description, attributes",
+    2: "RF2 - Perfil General del Usuario: Guardar la información básica de cada usuario dentro de la plataforma.\n  Colección: users | Campos: name, email, created_at, account_status, address",
+    3: "RF3 - Carrito de Compras Activo: Almacenar el estado actual del carrito de cada usuario, incluyendo productos, cantidades y total.\n  Colección: carts | Campos: user_id, items[], total, updated_at, cart_status",
+    4: "RF4 - Lista de Deseos: Permitir que el usuario guarde productos de interés para comprarlos posteriormente.\n  Colección: wishlists | Campos: user_id, products[]",
+    5: "RF5 - Preferencias Generales del Usuario: Guardar información básica de gustos del usuario para personalizar la experiencia.\n  Colección: user_preferences | Campos: user_id, favorite_categories, price_range, last_update",
+    6: "RF6 - Índices para Optimización: Implementar índices en las colecciones principales para mejorar la velocidad de búsqueda.\n  Índices: users.email (unique), products.category+price (compound), products.name (text), carts.user_id, user_preferences.user_id",
+    7: "RF7 - Pipeline de Agregación: Utilizar un pipeline de agregación para analizar los productos más almacenados en carritos.\n  Pipeline: $match → $unwind → $group → $sort → $limit 10",
+}
 
 
 # ==================== RF1: Catálogo de Productos ====================
@@ -14,6 +23,7 @@ def rf1_menu():
         print("2. Buscar por categoría")
         print("3. Buscar por nombre")
         print("4. Buscar por rango de precio")
+        print("9. Ver requerimiento funcional")
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
@@ -32,9 +42,10 @@ def rf1_menu():
             max_p = float(input("Precio máximo: "))
             for p in db.products.find({"price": {"$gte": min_p, "$lte": max_p}}):
                 print(f"  {p['name']} | ${p['price']} | {p['category']}")
+        elif opt == "9":
+            print(f"\n  {RF_DESCRIPTIONS[1]}")
         elif opt == "0":
             break
-
 
 
 # ==================== RF2: Perfil General del Usuario ====================
@@ -46,6 +57,7 @@ def rf2_menu():
         print("2. Buscar por email")
         print("3. Buscar por nombre")
         print("4. Filtrar por estado de cuenta")
+        print("9. Ver requerimiento funcional")
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
@@ -70,9 +82,10 @@ def rf2_menu():
             status = input("Estado (active/suspended): ")
             for u in db.users.find({"account_status": status}):
                 print(f"  {u['name']} | {u['email']}")
+        elif opt == "9":
+            print(f"\n  {RF_DESCRIPTIONS[2]}")
         elif opt == "0":
             break
-
 
 
 # ==================== RF3: Carrito de Compras Activo ====================
@@ -84,6 +97,7 @@ def rf3_menu():
         print("2. Agregar producto al carrito")
         print("3. Eliminar producto del carrito")
         print("4. Convertir carrito (checkout)")
+        print("9. Ver requerimiento funcional")
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
@@ -155,9 +169,10 @@ def rf3_menu():
                 print("  ✓ Carrito convertido (checkout completado).")
             else:
                 print("  No tiene carrito activo.")
+        elif opt == "9":
+            print(f"\n  {RF_DESCRIPTIONS[3]}")
         elif opt == "0":
             break
-
 
 
 # ==================== RF4: Lista de Deseos (Wishlist) ====================
@@ -168,6 +183,7 @@ def rf4_menu():
         print("1. Ver wishlist de un usuario")
         print("2. Agregar producto a wishlist")
         print("3. Eliminar producto de wishlist")
+        print("9. Ver requerimiento funcional")
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
@@ -217,9 +233,10 @@ def rf4_menu():
                 print(f"  ✓ {product['name']} eliminado de wishlist.")
             else:
                 print("  Producto no estaba en la wishlist.")
+        elif opt == "9":
+            print(f"\n  {RF_DESCRIPTIONS[4]}")
         elif opt == "0":
             break
-
 
 
 # ==================== RF5: Preferencias Generales del Usuario ====================
@@ -230,6 +247,7 @@ def rf5_menu():
         print("1. Ver preferencias de un usuario")
         print("2. Actualizar categorías favoritas")
         print("3. Actualizar rango de precio")
+        print("9. Ver requerimiento funcional")
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
@@ -272,31 +290,28 @@ def rf5_menu():
                 upsert=True
             )
             print("  ✓ Rango de precio actualizado.")
+        elif opt == "9":
+            print(f"\n  {RF_DESCRIPTIONS[5]}")
         elif opt == "0":
             break
-
 
 
 # ==================== RF6: Índices para Optimización ====================
 
 def rf6_create_indexes():
+    print(f"\n  {RF_DESCRIPTIONS[6]}")
     db.users.create_index("email", unique=True)
     db.products.create_index([("category", 1), ("price", 1)])
     db.products.create_index([("name", "text")])
     db.carts.create_index("user_id")
     db.user_preferences.create_index("user_id")
-    print("✓ Índices creados:")
-    print("  - users.email (unique)")
-    print("  - products.category + price (compound)")
-    print("  - products.name (text)")
-    print("  - carts.user_id")
-    print("  - user_preferences.user_id")
-
+    print("\n✓ Índices creados.")
 
 
 # ==================== RF7: Pipeline de Agregación (Popularidad) ====================
 
 def rf7_top_products():
+    print(f"\n  {RF_DESCRIPTIONS[7]}")
     pipeline = [
         {"$match": {"cart_status": {"$in": ["active", "converted"]}}},
         {"$unwind": "$items"},
