@@ -106,7 +106,16 @@ def rf4_menuD():
               rf4(func: eq(name, "{producto}")) {{
                 name
                 ~contains {{
-                  contains {{ name price }}
+                  ~placed {{
+                    name
+                    email
+                    placed {{
+                      contains {{
+                        name
+                        price
+                      }}
+                    }}
+                  }}
                 }}
               }}
             }}
