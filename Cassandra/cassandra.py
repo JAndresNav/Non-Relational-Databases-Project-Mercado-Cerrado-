@@ -5,7 +5,7 @@ from populate import populate_cassandra, drop_all_cassandra
 
 def get_session():
     try:
-        return get_cassandra_session()
+        return get_cassandra_session("mercado_cerrado_logs")
     except Exception:
         return None
 
