@@ -197,9 +197,9 @@ def populate_dgraph():
     bought: [uid] @reverse .
     contains: [uid] @reverse .
     belongs_to: [uid] @reverse .
+    placed: [uid] @reverse .
     wrote_review: [uid] .
     review_for: [uid] .
-    placed: [uid] .
     purchased: [uid] .
     rated: [uid] .
     """
