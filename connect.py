@@ -10,14 +10,16 @@ def get_mongo_db():
     client = MongoClient("mongodb://localhost:27017")
     return client["mercado_cerrado"]
 
-def get_cassandra_session(keyspace='mercado_cerrado_logs'):
+def get_cassandra_session(keyspace=None):
     cluster = Cluster(['127.0.0.1'], port=9042)
     session = cluster.connect()
     
-    try:
-        session.set_keyspace(keyspace)
-    except Exception as e:
-        print(f"El Keyspace '{keyspace}' no existe o no se pudo conectar: {e}")
-        print("Recuerda crearlo en cqlsh primero.")
-        
+    if keyspace:
+        try:
+            session.set_keyspace(keyspace)
+        except Exception:
+            # Si el keyspace no existe, no hacemos nada. 
+            # Esto permite que populate cree el esquema.
+            pass
+            
     return session
