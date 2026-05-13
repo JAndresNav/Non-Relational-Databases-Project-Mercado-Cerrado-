@@ -87,34 +87,3 @@ def rf7_favoritos_usuario():
     print("\n--- Registro de Favoritos ---")
     for row in rows:
         print(f"[{row.fav_timestamp}] Producto: {row.product_id} | Nota: {row.note}")
-
-def cassandra_menu():
-    while True:
-        print("\n--- Cassandra (Logs & Históricos) ---")
-        print("1. Populate (cargar datos desde CSV)")
-        print("2. Drop All (limpiar tablas)")
-        print("3. RF1 - Vistas de Productos")
-        print("4. RF2 - Historial de Búsquedas")
-        print("5. RF3 - Historial de Compras")
-        print("6. RF4 - Logs de Login")
-        print("7. RF5 - Actividad del Carrito")
-        print("8. RF6 - Cambios de Precio")
-        print("9. RF7 - Registro de Favoritos")
-        print("0. Regresar")
-        
-        opt = input("Selecciona una opción: ")
-        
-        try:
-            if opt == "1": populate_cassandra()
-            elif opt == "2": drop_all_cassandra()
-            elif opt == "3": rf1_vistas_usuario()
-            elif opt == "4": rf2_busquedas_usuario()
-            elif opt == "5": rf3_compras_usuario()
-            elif opt == "6": rf4_logins_usuario()
-            elif opt == "7": rf5_actividad_carrito()
-            elif opt == "8": rf6_cambios_precio()
-            elif opt == "9": rf7_favoritos_usuario()
-            elif opt == "0": break
-            else: print("Opción no válida.")
-        except Exception as e:
-            print(f"Error: {e}")
