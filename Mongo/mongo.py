@@ -27,17 +27,25 @@ def rf1_menu():
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
+            # Muestra todos los productos del catálogo.
+            # mongosh: db.products.find()
             for p in db.products.find():
                 print(f"  {p['name']} | {p['category']} | ${p['price']} | Stock: {p['stock']}")
         elif opt == "2":
+            # Busca productos por categoría exacta.
+            # mongosh: db.products.find({ category: "<categoría>" })
             cat = input("Categoría: ")
             for p in db.products.find({"category": cat}):
                 print(f"  {p['name']} | ${p['price']} | Stock: {p['stock']}")
         elif opt == "3":
+            # Busca productos por nombre usando una expresión regular insensible a mayúsculas.
+            # mongosh: db.products.find({ name: { $regex: /<nombre>/i } })
             name = input("Nombre (búsqueda parcial): ")
             for p in db.products.find({"name": {"$regex": name, "$options": "i"}}):
                 print(f"  {p['name']} | {p['category']} | ${p['price']}")
         elif opt == "4":
+            # Busca productos cuyo precio está dentro de un rango específico.
+            # mongosh: db.products.find({ price: { $gte: <min>, $lte: <max> } })
             min_p = float(input("Precio mínimo: "))
             max_p = float(input("Precio máximo: "))
             for p in db.products.find({"price": {"$gte": min_p, "$lte": max_p}}):
@@ -61,9 +69,13 @@ def rf2_menu():
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
+            # Muestra todos los usuarios registrados.
+            # mongosh: db.users.find()
             for u in db.users.find():
                 print(f"  {u['name']} | {u['email']} | {u['account_status']} | {u['address']['city']}")
         elif opt == "2":
+            # Busca un usuario por email exacto.
+            # mongosh: db.users.findOne({ email: "<email>" })
             email = input("Email: ")
             u = db.users.find_one({"email": email})
             if u:
@@ -75,10 +87,14 @@ def rf2_menu():
             else:
                 print("  Usuario no encontrado.")
         elif opt == "3":
+            # Busca usuarios por nombre parcial usando expresión regular.
+            # mongosh: db.users.find({ name: { $regex: /<nombre>/i } })
             name = input("Nombre (búsqueda parcial): ")
             for u in db.users.find({"name": {"$regex": name, "$options": "i"}}):
                 print(f"  {u['name']} | {u['email']} | {u['account_status']}")
         elif opt == "4":
+            # Filtra usuarios por estado de cuenta.
+            # mongosh: db.users.find({ account_status: "<estado>" })
             status = input("Estado (active/suspended): ")
             for u in db.users.find({"account_status": status}):
                 print(f"  {u['name']} | {u['email']}")
@@ -101,6 +117,9 @@ def rf3_menu():
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
+            # Obtiene el carrito activo de un usuario por su email.
+            # mongosh: const user = db.users.findOne({ email: "<email>" });
+            #          db.carts.findOne({ user_id: user._id, cart_status: "active" })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -114,6 +133,9 @@ def rf3_menu():
                     print(f"  {item['name']} | ${item['price']} x{item['quantity']} = ${item['subtotal']}")
                 print(f"  Total: ${cart['total']}")
         elif opt == "2":
+            # Agrega un producto al carrito activo; crea un carrito si no existe.
+            # mongosh: const cart = db.carts.findOne({ user_id: user._id, cart_status: "active" });
+            #          db.carts.updateOne({ _id: cartId }, { $push: { items: item }, $inc: { total: subtotal }, $set: { updated_at: new Date() } })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -138,6 +160,8 @@ def rf3_menu():
             })
             print(f"  ✓ {product['name']} x{qty} agregado al carrito.")
         elif opt == "3":
+            # Elimina un producto del carrito activo y ajusta el total.
+            # mongosh: db.carts.updateOne({ _id: cart._id }, { $pull: { items: { name: "<nombre>" } }, $inc: { total: -<subtotal> } })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -159,6 +183,8 @@ def rf3_menu():
             })
             print(f"  ✓ {item['name']} eliminado del carrito.")
         elif opt == "4":
+            # Marca el carrito activo como convertido (checkout completado).
+            # mongosh: db.carts.updateOne({ user_id: user._id, cart_status: "active" }, { $set: { cart_status: "converted", updated_at: new Date() } })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -187,6 +213,8 @@ def rf4_menu():
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
+            # Muestra los productos guardados en la wishlist de un usuario.
+            # mongosh: db.wishlists.findOne({ user_id: user._id })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -201,6 +229,8 @@ def rf4_menu():
                     if p:
                         print(f"  {p['name']} | ${p['price']} | {p['category']}")
         elif opt == "2":
+            # Agrega un producto a la wishlist del usuario.
+            # mongosh: db.wishlists.updateOne({ user_id: user._id }, { $addToSet: { products: product._id } }, { upsert: true })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -218,6 +248,8 @@ def rf4_menu():
                 db.wishlists.update_one({"_id": wl["_id"]}, {"$addToSet": {"products": product["_id"]}})
             print(f"  ✓ {product['name']} agregado a wishlist.")
         elif opt == "3":
+            # Elimina un producto de la wishlist del usuario.
+            # mongosh: db.wishlists.updateOne({ user_id: user._id }, { $pull: { products: product._id } })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -251,6 +283,8 @@ def rf5_menu():
         print("0. Regresar")
         opt = input("Selecciona una opción: ")
         if opt == "1":
+            # Muestra las preferencias guardadas para un usuario.
+            # mongosh: db.user_preferences.findOne({ user_id: user._id })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -264,6 +298,8 @@ def rf5_menu():
                 print(f"  Rango de precio: ${pref['price_range']['min']} - ${pref['price_range']['max']}")
                 print(f"  Última actualización: {pref['last_update']}")
         elif opt == "2":
+            # Actualiza las categorías favoritas del usuario.
+            # mongosh: db.user_preferences.updateOne({ user_id: user._id }, { $set: { favorite_categories: [...], last_update: new Date() } }, { upsert: true })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -277,6 +313,8 @@ def rf5_menu():
             )
             print("  ✓ Categorías actualizadas.")
         elif opt == "3":
+            # Actualiza el rango de precio preferido del usuario.
+            # mongosh: db.user_preferences.updateOne({ user_id: user._id }, { $set: { price_range: { min: min, max: max }, last_update: new Date() } }, { upsert: true })
             email = input("Email del usuario: ")
             user = db.users.find_one({"email": email})
             if not user:
@@ -299,6 +337,13 @@ def rf5_menu():
 # ==================== RF6: Índices para Optimización ====================
 
 def rf6_create_indexes():
+    # Crea índices para optimizar búsquedas frecuentes en MongoDB.
+    # mongosh:
+    #   db.users.createIndex({ email: 1 }, { unique: true })
+    #   db.products.createIndex({ category: 1, price: 1 })
+    #   db.products.createIndex({ name: "text" })
+    #   db.carts.createIndex({ user_id: 1 })
+    #   db.user_preferences.createIndex({ user_id: 1 })
     print(f"\n  {RF_DESCRIPTIONS[6]}")
     db.users.create_index("email", unique=True)
     db.products.create_index([("category", 1), ("price", 1)])
@@ -311,6 +356,16 @@ def rf6_create_indexes():
 # ==================== RF7: Pipeline de Agregación (Popularidad) ====================
 
 def rf7_top_products():
+    # Ejecuta un pipeline de agregación en la colección carts para calcular
+    # los productos más populares según la cantidad total en carritos.
+    # mongosh:
+    #   db.carts.aggregate([
+    #     { $match: { cart_status: { $in: ["active", "converted"] } } },
+    #     { $unwind: "$items" },
+    #     { $group: { _id: "$items.product_id", total_count: { $sum: "$items.quantity" }, product_name: { $first: "$items.name" } } },
+    #     { $sort: { total_count: -1 } },
+    #     { $limit: 10 }
+    #   ])
     print(f"\n  {RF_DESCRIPTIONS[7]}")
     pipeline = [
         {"$match": {"cart_status": {"$in": ["active", "converted"]}}},
