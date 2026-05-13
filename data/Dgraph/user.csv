@@ -1,0 +1,11 @@
+id_user,name,email,is_frequent
+U1,Andrea Lopez,andres@iteso.mx,true
+U2,Brenda Fernandez,brenda@iteso.mx,false
+U3,Ana Choza,ana@iteso.mx,true
+U4,Diego Jimenez,huerta@iteso.mx,false
+U5,Jose Verdugo,jose.verdugo@gmail.com,true
+U6,Sofia Garcia,sofia.garcia@gmail.com,false
+U7,Diego Rodriguez,diego.rod@outlook.com,true
+U8,Elena Torres,elena.torres@iteso.mx,false
+U9,Javier Hernandez,javier.h@gmail.com,true
+U10,Lucia Mendez,lucia.m@outlook.com,false

@@ -1,6 +1,7 @@
-from populate import populate_mongo, drop_all_mongo
+from populate import populate_mongo, drop_all_mongo, populate_dgraph, drop_all_dgraph, populate_cassandra, drop_all_cassandra
 from Mongo.mongo import rf1_menu, rf2_menu, rf3_menu, rf4_menu, rf5_menu, rf6_create_indexes, rf7_top_products
-
+from Dgraph.dgraph import rf1_menuD, rf2_menuD, rf3_menuD, rf4_menuD, rf4_menuD, rf5_menuD, rf6_menuD, rf7_menuD
+from Cassandra.cassandra import rf1_vistas_usuario, rf2_busquedas_usuario, rf3_compras_usuario, rf4_logins_usuario, rf5_actividad_carrito, rf6_cambios_precio, rf7_favoritos_usuario
 
 def mongo_menu():
     while True:
@@ -37,6 +38,69 @@ def mongo_menu():
         elif opt == "0":
             break
 
+def dgraph_menu():
+    while True:
+        print("\n--- Dgraph ---")
+        print("1. Populate (crear esquema y poblar nodos/aristas)")
+        print("2. Drop All (eliminar todo el grafo)")
+        print("3. RF1 - Recomendaciones por Filtrado Colaborativo")
+        print("4. RF2 - Reseñas como Nodos de Conexión")
+        print("5. RF3 - Filtrado de Calidad y Clientes Frecuentes")
+        print("6. RF4 - Productos Adquiridos Juntos (Co-compra)")
+        print("7. RF5 - Grafo de Actividad del Usuario")
+        print("8. RF6 - Descubrimiento por Categoría Preferida")
+        print("9. RF7 - Recomendación por Compatibilidad")
+        print("0. Regresar")
+        
+        opt = input("Selecciona una opción: ")
+        
+        if opt == "1":
+            populate_dgraph()
+        elif opt == "2":
+            drop_all_dgraph()
+        elif opt == "3":
+            rf1_menuD()
+        elif opt == "4":
+            rf2_menuD()
+        elif opt == "5":
+            rf3_menuD()
+        elif opt == "6":
+            rf4_menuD()
+        elif opt == "7":
+            rf5_menuD()
+        elif opt == "8":
+            rf6_menuD()
+        elif opt == "9":
+            rf7_menuD()
+        elif opt == "0":
+            break
+
+def cassandra_menu():
+    while True:
+        print("\n--- Cassandra (Logs & Históricos) ---")
+        print("1. Populate (cargar datos desde CSV)")
+        print("2. Drop All (limpiar tablas)")
+        print("3. RF1 - Vistas de Productos")
+        print("4. RF2 - Historial de Búsquedas")
+        print("5. RF3 - Historial de Compras")
+        print("6. RF4 - Logs de Login")
+        print("7. RF5 - Actividad del Carrito")
+        print("8. RF6 - Cambios de Precio")
+        print("9. RF7 - Registro de Favoritos")
+        print("0. Regresar")
+        
+        opt = input("Selecciona una opción: ")
+        
+        if opt == "1": populate_cassandra()
+        elif opt == "2": drop_all_cassandra()
+        elif opt == "3": rf1_vistas_usuario()
+        elif opt == "4": rf2_busquedas_usuario()
+        elif opt == "5": rf3_compras_usuario()
+        elif opt == "6": rf4_logins_usuario()
+        elif opt == "7": rf5_actividad_carrito()
+        elif opt == "8": rf6_cambios_precio()
+        elif opt == "9": rf7_favoritos_usuario()
+        elif opt == "0": break
 
 def main_menu():
     while True:
@@ -49,9 +113,9 @@ def main_menu():
         if opt == "1":
             mongo_menu()
         elif opt == "2":
-            pass
+            dgraph_menu()
         elif opt == "3":
-            pass
+            cassandra_menu()
         elif opt == "0":
             break
 

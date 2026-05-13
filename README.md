@@ -13,18 +13,29 @@ Este proyecto desarrolla un Sistema de Recomendaciones para E-Commerce que perso
 ## Python Environment
 
 ```bash
+# Crear y activar entorno virtual
 python -m venv venv
+venv\Scripts\Activate.ps1 # Windows
+source venv/bin/activate  # Linux/Mac
 
-# Windows
-venv\Scripts\Activate.ps1
-
+# Instalar dependencias
 pip install -r requirements.txt
 ```
 
-## Docker
+## Docker (Levantar servicios)
+
+Para ejecutar el proyecto, es necesario tener los siguientes contenedores activos:
 
 ```bash
+# MongoDB
 docker run -d --name mongo-mercado -p 27017:27017 mongo:latest
+
+# Dgraph (Standalone + Ratel UI)
+docker run -d --name dgraph-mercado -p 8080:8080 -p 9080:9080 dgraph/standalone:latest
+docker run -d --name ratel-mercado -p 8000:8000 dgraph/ratel:latest
+
+# Cassandra
+docker run -d --name cassandra-mercado -p 9042:9042 cassandra:latest
 ```
 
 ## Ejecutar
@@ -33,40 +44,51 @@ docker run -d --name mongo-mercado -p 27017:27017 mongo:latest
 python main.py
 ```
 
-# Flujo de Trabajo
+# Flujo de Trabajo y Arquitectura
 
-## MongoDB
+## MongoDB (Persistencia y Catálogo)
 
-La interacción con MongoDB se centraliza en `connect.py` utilizando la librería `pymongo`. La lógica se encuentra en `Mongo/mongo.py`.
+La interacción con MongoDB se centraliza en `connect.py` y la lógica de consultas en `Mongo/mongo.py`. Se eligió por su flexibilidad de esquema para manejar documentos anidados como direcciones y atributos variables de productos.
 
-- **Conexión:** `connect.py` establece la conexión al contenedor Docker en `localhost:27017`, base de datos `mercado_cerrado`.
-- **Población:** Desde el menú, la opción "Populate" ejecuta `populate()` que crea y pobla todas las colecciones (products, users, carts, wishlists, user_preferences).
-- **Índices:** Índice único en `users.email`, compuesto en `products.category+price`, texto en `products.name`, e índices en `carts.user_id` y `user_preferences.user_id`.
-- **Consultas:** Cada opción RF1–RF7 del submenú MongoDB ejecuta funciones en `Mongo/mongo.py`.
+- **Diseño de Colecciones:** Implementa un modelo de datos orientado a documentos para `products`, `users`, `carts`, `wishlists` y `user_preferences`.
+- **Optimización:** Se configuraron índices específicos para garantizar el rendimiento:
+    - Índice único en `users.email` para evitar duplicidad.
+    - Índice compuesto en `products.category + price` para búsquedas filtradas rápidas.
+    - Índice de texto en `products.name` para búsquedas parciales.
+- **Operación:** La función `populate_mongo()` se encarga de la limpieza de colecciones y carga de datos maestros, vinculando carritos y wishlists mediante `ObjectId` de usuario.
 
-## Dgraph
+## Dgraph (Grafos y Recomendaciones)
 
-En Dgraph, la conexión se establece desde connect.py utilizando el cliente oficial pydgraph en Python.
-Dentro de la carpeta Dgraph/ se define el schema con los predicados y sus índices, el cual se aplica al iniciar la conexión mediante client.alter(). La inserción de datos en populate.py se realiza a través de transacciones (txn = client.txn()) que ejecutan mutaciones en formato JSON con txn.mutate(set_obj=data): primero se crean los nodos User, Product y Category, luego se establecen las aristas como bought, belongs_to y placed/contains al registrar órdenes, y finalmente se crean los nodos Review con sus aristas wrote_review y review_for.
-Las consultas en main.py se ejecutan mediante DQL usando la terminal, donde cada opción del menú corresponde a un requerimiento funcional
+Gestiona la inteligencia del sistema a través de relaciones complejas. Permite realizar recomendaciones que serían costosas en bases de datos relacionales o documentales.
 
-## Cassandra
+- **Modelo de Grafos:** Define un esquema de predicados indexados para nodos tipo `User`, `Product`, `Category`, `Review` y `Order`.
+- **Lógica de Relaciones:** Utiliza aristas (`edges`) como `bought`, `wrote_review`, `belongs_to` y `placed` para conectar usuarios con productos y órdenes.
+- **Consultas (RF):** Implementa algoritmos de filtrado colaborativo (usuarios que compraron lo mismo), análisis de co-compra y descubrimiento de productos basado en la profundidad del grafo de actividad del usuario.
 
-El registro de logs masivos se gestiona mediante el driver `cassandra-driver` en `connect.py`.
+## Cassandra (Logs y Auditoría de Eventos)
 
-- **Esquema:** En la carpeta `Cassandra/` se encuentran los scripts `.cql` para la creación de las 7 tablas de actividad (vistas, búsquedas, logins, historial de precios, etc.). Se utiliza un diseño de "Query-First", donde la partición por `user_id` y el ordenamiento por clustering keys permiten lecturas de alta velocidad.
-- **Operación:** `populate.py` contiene la lógica para la ingesta de eventos masivos. La lectura en `main.py` recupera historiales cronológicos y eventos de interacción con el carrito sin necesidad de procesos de unión de tablas, aprovechando la arquitectura de columnas de Cassandra.
+Se encarga del registro masivo de eventos inmutables, aprovechando su alta capacidad de escritura y escalabilidad lineal.
 
-## Estructura del Proyecto
+- **Diseño Query-First:** El esquema en `Cassandra/schema.cql` está diseñado para responder a las consultas de logs sin realizar uniones.
+    - Utiliza `user_id` como *Partition Key* para asegurar que los logs de un mismo usuario vivan en el mismo nodo.
+    - Utiliza `timestamp` como *Clustering Key* con ordenamiento descendente para recuperar la actividad reciente de forma inmediata.
+- **Estructuras Avanzadas:** 
+    - Implementa `LIST<TEXT>` para el historial de compras, permitiendo registrar duplicados y mantener el orden del ticket de compra.
+- **Automatización:** La carga de datos en `populate.py` crea automáticamente el Keyspace y las tablas leyendo el archivo CQL antes de procesar los CSVs de actividad.
+
+# Estructura del Proyecto
 
 ```text
 project-name/
-├── Cassandra/    # Scripts de creación de tablas (.cql)
-├── Mongo/        # Definición de esquemas e índices
-├── Dgraph/       # Esquema de predicados y tipos
-├── data/         # Archivos fuente (JSON/CSV)
-├── connect.py    # Gestión de conexiones a las 3 BD
-├── populate.py   # Plan detallado de población de datos
-├── main.py       # Menú de consultas funcionales
+├── Cassandra/    # Lógica de Cassandra y schema.cql
+├── Mongo/        # Definición de esquemas, índices y consultas RF
+├── Dgraph/       # Esquema de predicados, tipos y lógica de grafos
+├── data/         # Archivos fuente (CSVs de carga inicial)
+│   ├── Mongo/
+│   ├── Dgraph/
+│   └── Cassandra/
+├── connect.py    # Gestión de conexiones políglotas
+├── populate.py   # Script automatizado de población (Seeders)
+├── main.py       # Interfaz de usuario y orquestador de menús
 └── README.md     # Documentación del proyecto
 ```

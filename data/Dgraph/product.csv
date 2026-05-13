@@ -1,0 +1,11 @@
+id_prod,name,id_cat,price,is_new
+P1,Laptop Gamer,C1,25000,true
+P2,Teclado Mecanico,C1,1500,false
+P3,Maceta Minimalista,C2,300,true
+P4,Monitor Curvo 27",C1,6000,false
+P5,Silla Ergonomica,C2,3200,true
+P6,Lampara de Escritorio Minimalista,C2,850,true
+P7,Auriculares Inalambricos,C1,2100,true
+P8,Juego de Tazas Blancas,C2,450,false
+P9,Raton Inalambrico,C1,800,false
+P10,Escritorio de Madera Simple,C2,4500,true
