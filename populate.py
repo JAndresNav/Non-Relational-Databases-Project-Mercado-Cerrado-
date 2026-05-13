@@ -75,14 +75,17 @@ def populate_cassandra():
     print("\n✓ Populate completado en Cassandra.")
 
 def drop_all_cassandra():
-    session = get_cassandra_session()
+    session = get_cassandra_session(keyspace='mercado_cerrado_logs')
     tables = [
         "product_views_by_user", "search_history_by_user", "purchase_history_by_user",
         "login_logs_by_user", "cart_activity_by_user", "price_changes_by_product",
         "favorite_activity_by_user"
     ]
     for t in tables:
-        session.execute(f"TRUNCATE {t}")
+        try:
+            session.execute(f"TRUNCATE {t}")
+        except Exception as e:
+            print(f"Error al vaciar tabla {t}: {e}")
     print("✓ Todas las tablas de Cassandra han sido vaciadas.")
 
 # MongoDB
