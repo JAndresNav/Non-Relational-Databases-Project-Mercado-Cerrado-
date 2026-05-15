@@ -10,7 +10,7 @@ def run_query(query):
         data = json.loads(res.json)
         print(json.dumps(data, indent=2))
     except Exception as e:
-        print(f"Error en la consulta: {e}")
+        print(f"Error: {e}")
     finally:
         txn.discard()
 
