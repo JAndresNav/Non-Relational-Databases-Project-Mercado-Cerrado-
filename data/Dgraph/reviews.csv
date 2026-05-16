@@ -1,9 +1,9 @@
-id_review,id_user,rating,text,date
-R1,U1,5,Excelente equipo,2026-04-20T15:00:00Z
-R2,U1,4,Muy comodo el teclado,2026-04-21T09:00:00Z
-R3,U2,5,Silla super ergonomica,2026-04-22T10:30:00Z
-R4,U3,5,La mejor laptop para trabajar,2026-04-23T11:00:00Z
-R5,U3,4,Buen monitor pero algo pesado,2026-04-24T12:00:00Z
-R6,U5,5,Da mucha luz y se ve elegante,2026-04-25T14:45:00Z
-R7,U7,3,Bateria regular de los audifonos,2026-04-26T16:20:00Z
-R8,U9,4,Tazas bonitas pero pequenas,2026-04-27T08:10:00Z
+id_review,id_user,id_prod,rating,text,date
+R1,U1,P1,5,Excelente equipo,2026-04-20T15:00:00Z
+R2,U1,P2,4,Muy comodo el teclado,2026-04-21T09:00:00Z
+R3,U2,P5,5,Silla super ergonomica,2026-04-22T10:30:00Z
+R4,U3,P1,5,La mejor laptop para trabajar,2026-04-23T11:00:00Z
+R5,U3,P4,4,Buen monitor pero algo pesado,2026-04-24T12:00:00Z
+R6,U5,P6,5,Da mucha luz y se ve elegante,2026-04-25T14:45:00Z
+R7,U7,P7,3,Bateria regular de los audifonos,2026-04-26T16:20:00Z
+R8,U9,P8,4,Tazas bonitas pero pequenas,2026-04-27T08:10:00Z
