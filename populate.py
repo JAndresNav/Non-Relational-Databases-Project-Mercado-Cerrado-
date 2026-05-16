@@ -237,7 +237,6 @@ def populate_dgraph():
         bought: [uid]
         wrote_review: [uid]
         placed: [uid]
-        purchased: [uid]
         rated: [uid]
     }
     
@@ -283,7 +282,6 @@ def populate_dgraph():
     placed: [uid] @reverse .
     wrote_review: [uid] .
     review_for: [uid] .
-    purchased: [uid] .
     rated: [uid] .
     """
     client.alter(pydgraph.Operation(schema=schema))
@@ -336,7 +334,6 @@ def populate_dgraph():
             mutations.append({
                 "uid": f"_:{row['id_user']}",
                 "bought": {"uid": f"_:{row['id_prod']}"},
-                "purchased": {"uid": f"_:{row['id_prod']}"},
                 "placed": {
                     "uid": f"_:{row['id_order']}", "dgraph.type": "Order",
                     "order_date": row['order_date'], "total": float(row['total']),
