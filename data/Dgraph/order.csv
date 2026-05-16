@@ -1,4 +1,4 @@
-id_order,id_user,id_prod,order_date,total
+id_order,id_user,order_date,total
 O1,U1,2026-04-20T10:00:00Z,26500
 O1,U1,2026-04-20T10:00:00Z,26500
 O2,U2,2026-04-21T11:30:00Z,3200
