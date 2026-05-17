@@ -5,6 +5,7 @@ import json
 import uuid
 from datetime import datetime
 from connect import get_mongo_db, get_dgraph_client, get_cassandra_session
+from Mongo.mongo import rf6_create_indexes
 
 # Cassandra
 def populate_cassandra():
@@ -26,8 +27,12 @@ def populate_cassandra():
     with open(os.path.join(DATA_DIR_C, "product_views.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO product_views_by_user (user_id, viewed_at, product_id, product_name, category) VALUES (%s, %s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['viewed_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['product_name'], row['category']])
+            # Por usuario
+            query1 = "INSERT INTO product_views_by_user (user_id, viewed_at, product_id, product_name, category) VALUES (%s, %s, %s, %s, %s)"
+            session.execute(query1, [uuid.UUID(row['user_id']), datetime.strptime(row['viewed_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['product_name'], row['category']])
+            # Por producto (Nueva)
+            query2 = "INSERT INTO product_views_by_product (product_id, viewed_at, user_id, product_name) VALUES (%s, %s, %s, %s)"
+            session.execute(query2, [uuid.UUID(row['product_id']), datetime.strptime(row['viewed_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['user_id']), row['product_name']])
     
     # --- Searches (RF2) ---
     with open(os.path.join(DATA_DIR_C, "searches.csv"), encoding="utf-8") as f:
@@ -62,8 +67,12 @@ def populate_cassandra():
     with open(os.path.join(DATA_DIR_C, "user_price_history.csv"), encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            query = "INSERT INTO user_price_history (user_id, product_id, captured_at, price_seen) VALUES (%s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), uuid.UUID(row['product_id']), datetime.strptime(row['captured_at'], "%Y-%m-%d %H:%M:%S"), float(row['price_seen'])])
+            # Por usuario
+            query1 = "INSERT INTO user_price_history (user_id, product_id, captured_at, price_seen) VALUES (%s, %s, %s, %s)"
+            session.execute(query1, [uuid.UUID(row['user_id']), uuid.UUID(row['product_id']), datetime.strptime(row['captured_at'], "%Y-%m-%d %H:%M:%S"), float(row['price_seen'])])
+            # Por producto (Nueva)
+            query2 = "INSERT INTO price_history_by_product (product_id, captured_at, price_seen) VALUES (%s, %s, %s)"
+            session.execute(query2, [uuid.UUID(row['product_id']), datetime.strptime(row['captured_at'], "%Y-%m-%d %H:%M:%S"), float(row['price_seen'])])
 
     # --- Favorites (RF7) ---
     with open(os.path.join(DATA_DIR_C, "favorites.csv"), encoding="utf-8") as f:
@@ -77,9 +86,9 @@ def populate_cassandra():
 def drop_all_cassandra():
     session = get_cassandra_session(keyspace='mercado_cerrado_logs')
     tables = [
-        "product_views_by_user", "search_history_by_user", "purchase_history_by_user",
-        "login_logs_by_user", "cart_activity_by_user", "user_price_history",
-        "favorite_activity_by_user"
+        "product_views_by_user", "product_views_by_product", "search_history_by_user",
+        "purchase_history_by_user", "login_logs_by_user", "cart_activity_by_user",
+        "user_price_history", "price_history_by_product", "favorite_activity_by_user"
     ]
     for t in tables:
         try:
@@ -204,6 +213,7 @@ def populate_mongo():
         print(f"  user_preferences: {len(prefs)} documentos insertados.")
 
     print("\n✓ Populate completado.")
+    rf6_create_indexes()
 
 
 def drop_all_mongo():

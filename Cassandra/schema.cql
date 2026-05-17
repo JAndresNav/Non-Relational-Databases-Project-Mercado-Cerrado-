@@ -6,14 +6,14 @@ USE mercado_cerrado_logs;
 
 -- Eliminar tablas existentes para asegurar actualización de esquema
 DROP TABLE IF EXISTS product_views_by_user;
+DROP TABLE IF EXISTS product_views_by_product;
 DROP TABLE IF EXISTS search_history_by_user;
 DROP TABLE IF EXISTS purchase_history_by_user;
 DROP TABLE IF EXISTS login_logs_by_user;
 DROP TABLE IF EXISTS cart_activity_by_user;
 DROP TABLE IF EXISTS user_price_history;
+DROP TABLE IF EXISTS price_history_by_product;
 DROP TABLE IF EXISTS favorite_activity_by_user;
--- Tabla vieja por si acaso existía
-DROP TABLE IF EXISTS price_changes_by_product;
 
 -- 1. Registro de Vistas de Productos (RF1)
 -- Consulta: Ver los últimos productos que un usuario ha visitado.
@@ -24,6 +24,15 @@ CREATE TABLE IF NOT EXISTS product_views_by_user (
     product_name TEXT,
     category TEXT,
     PRIMARY KEY ((user_id), viewed_at)
+) WITH CLUSTERING ORDER BY (viewed_at DESC);
+
+-- Consulta: Ver quién ha visitado un producto específico (Demostración de diferente Partition Key).
+CREATE TABLE IF NOT EXISTS product_views_by_product (
+    product_id UUID,
+    viewed_at TIMESTAMP,
+    user_id UUID,
+    product_name TEXT,
+    PRIMARY KEY ((product_id), viewed_at)
 ) WITH CLUSTERING ORDER BY (viewed_at DESC);
 
 -- 2. Historial de Búsquedas (RF2)
@@ -74,6 +83,14 @@ CREATE TABLE IF NOT EXISTS user_price_history (
     price_seen DECIMAL,
     PRIMARY KEY ((user_id), product_id, captured_at)
 ) WITH CLUSTERING ORDER BY (product_id ASC, captured_at DESC);
+
+-- Consulta: Ver la evolución del precio de un producto (Demostración de diferente Partition Key).
+CREATE TABLE IF NOT EXISTS price_history_by_product (
+    product_id UUID,
+    captured_at TIMESTAMP,
+    price_seen DECIMAL,
+    PRIMARY KEY ((product_id), captured_at)
+) WITH CLUSTERING ORDER BY (captured_at DESC);
 
 -- 7. Registro de Favoritos (RF7)
 -- Consulta: Ver cuándo un usuario marcó productos como favoritos.

@@ -4,9 +4,13 @@
 - Maria Rebeca Armenta Armanta 759951
 - Andrés Huerta Vasquez 759666
 
-# Descripción del proyecto
+# Contexto del Proyecto: Mercado Cerrado
 
-Este proyecto desarrolla un Sistema de Recomendaciones para E-Commerce que personaliza la experiencia de compra mediante el análisis del comportamiento de los usuarios, sus preferencias y las interacciones con productos. El sistema integra múltiples bases de datos no relacionales: MongoDB para el almacenamiento de productos, usuarios y carritos; Dgraph para gestionar relaciones y generar recomendaciones basadas en afinidad y reseñas; y Cassandra para registrar actividades y eventos del usuario. El objetivo es mejorar la búsqueda de productos, optimizar el inventario y ofrecer recomendaciones relevantes que faciliten la toma de decisiones y aumenten la eficiencia de la plataforma.
+**Mercado Cerrado** es una plataforma de e-commerce diseñada para demostrar el uso eficiente de arquitecturas de bases de datos políglotas. En un entorno real, un solo motor de base de datos rara vez es óptimo para todas las necesidades. Por ello, hemos dividido el sistema en tres capas funcionales:
+
+1.  **Capa de Negocio (MongoDB):** Gestiona el núcleo de la aplicación (catálogo, perfiles, carritos). Elegimos MongoDB por su flexibilidad para manejar datos semi-estructurados y su capacidad de escala horizontal para operaciones CRUD frecuentes.
+2.  **Capa de Inteligencia y Relaciones (Dgraph):** Gestiona la red de interacciones entre usuarios y productos. Los grafos son ideales aquí porque permiten realizar recomendaciones complejas (filtrado colaborativo, co-compras) atravesando múltiples niveles de relación sin la penalización de rendimiento de los JOINs relacionales.
+3.  **Capa de Observabilidad y Logs (Cassandra):** Registra el historial inmutable de actividad. Cassandra es perfecta para esta tarea debido a su altísima velocidad de escritura y su diseño orientado a consultas específicas (logs cronológicos), permitiendo auditorías y análisis de comportamiento a gran escala.
 
 # Setup
 
@@ -48,47 +52,43 @@ python main.py
 
 ## MongoDB (Persistencia y Catálogo)
 
-La interacción con MongoDB se centraliza en `connect.py` y la lógica de consultas en `Mongo/mongo.py`. Se eligió por su flexibilidad de esquema para manejar documentos anidados como direcciones y atributos variables de productos.
+La interacción con MongoDB se centraliza en `connect.py` (usando un patrón Singleton para eficiencia de recursos) y la lógica de consultas en `Mongo/mongo.py`.
 
-- **Diseño de Colecciones:** Implementa un modelo de datos orientado a documentos para `products`, `users`, `carts`, `wishlists` y `user_preferences`.
-- **Optimización:** Se configuraron índices específicos para garantizar el rendimiento:
-    - Índice único en `users.email` para evitar duplicidad.
-    - Índice compuesto en `products.category + price` para búsquedas filtradas rápidas.
-    - Índice de texto en `products.name` para búsquedas parciales.
-- **Operación:** La función `populate_mongo()` se encarga de la limpieza de colecciones y carga de datos maestros, vinculando carritos y wishlists mediante `ObjectId` de usuario.
+- **Optimización de Índices:** Se configuraron índices para cubrir patrones de consulta reales:
+    - `email` (único): Búsqueda de usuarios.
+    - `category + price`: Búsquedas filtradas por catálogo.
+    - `name` (text): Búsquedas por palabras clave usando el motor de búsqueda de MongoDB.
+    - `price`: Para rangos de precio eficientes.
+- **Operación:** Se prioriza el uso de índices sobre escaneos de colección (Regex), mejorando drásticamente el rendimiento en catálogos grandes.
 
 ## Dgraph (Grafos y Recomendaciones)
 
-Gestiona la inteligencia del sistema a través de relaciones complejas. Permite realizar recomendaciones que serían costosas en bases de datos relacionales o documentales.
+Gestiona la inteligencia del sistema a través de relaciones semánticas. 
 
-- **Modelo de Grafos:** Define un esquema de predicados indexados para nodos tipo `User`, `Product`, `Category`, `Review` y `Order`.
-- **Lógica de Relaciones:** Utiliza aristas (`edges`) como `bought`, `wrote_review`, `belongs_to` y `placed` para conectar usuarios con productos y órdenes.
-- **Consultas (RF):** Implementa algoritmos de filtrado colaborativo (usuarios que compraron lo mismo), análisis de co-compra y descubrimiento de productos basado en la profundidad del grafo de actividad del usuario.
+- **Modelo de Relaciones:** Se utilizan aristas directas como `bought` (compró) y `rated` (calificó) junto con relaciones a través de entidades intermedias para permitir consultas de recomendación potentes y flexibles.
+- **Consultas de Grafos:** 
+    - **RF1 (Filtrado Colaborativo):** Encuentra productos que otros usuarios compraron basándose en el historial del usuario actual (`bought -> ~bought -> bought`).
+    - **RF4 (Co-compra):** Identifica qué productos se compran frecuentemente en la misma orden.
 
 ## Cassandra (Logs y Auditoría de Eventos)
 
-Se encarga del registro masivo de eventos inmutables, aprovechando su alta capacidad de escritura y escalabilidad lineal.
+Diseñada para el almacenamiento de series temporales de alta velocidad.
 
-- **Diseño Query-First:** El esquema en `Cassandra/schema.cql` está diseñado para responder a las consultas de logs sin realizar uniones.
-    - Utiliza `user_id` como *Partition Key* para asegurar que los logs de un mismo usuario vivan en el mismo nodo.
-    - Utiliza `timestamp` como *Clustering Key* con ordenamiento descendente para recuperar la actividad reciente de forma inmediata.
-- **Estructuras Avanzadas:** 
-    - Implementa `LIST<TEXT>` para el historial de compras, permitiendo registrar duplicados y mantener el orden del ticket de compra.
-- **Automatización:** La carga de datos en `populate.py` crea automáticamente el Keyspace y las tablas leyendo el archivo CQL antes de procesar los CSVs de actividad.
+- **Diversidad de Partition Keys:** Hemos corregido el diseño inicial para evitar "Hot Spots". Ahora el esquema soporta múltiples patrones de acceso:
+    - **Query por Usuario:** (`user_id` como PK) para ver el historial personal de un cliente.
+    - **Query por Producto:** (`product_id` como PK) para analizar el tráfico o la evolución de precios de un artículo específico en toda la plataforma.
+- **Clustering Keys:** Se utiliza el tiempo (`viewed_at`, `captured_at`) para mantener los datos ordenados físicamente en disco, permitiendo lecturas secuenciales extremadamente rápidas de los eventos más recientes.
 
 # Estructura del Proyecto
 
 ```text
 project-name/
-├── Cassandra/    # Lógica de Cassandra y schema.cql
-├── Mongo/        # Definición de esquemas, índices y consultas RF
-├── Dgraph/       # Esquema de predicados, tipos y lógica de grafos
-├── data/         # Archivos fuente (CSVs de carga inicial)
-│   ├── Mongo/
-│   ├── Dgraph/
-│   └── Cassandra/
-├── connect.py    # Gestión de conexiones políglotas
-├── populate.py   # Script automatizado de población (Seeders)
-├── main.py       # Interfaz de usuario y orquestador de menús
-└── README.md     # Documentación del proyecto
+├── Cassandra/    # Lógica de Cassandra y schema.cql (Diseño Query-First)
+├── Mongo/        # Definición de esquemas, índices y consultas optimizadas
+├── Dgraph/       # Esquema de grafos y lógica de recomendaciones transversales
+├── data/         # Datasets en CSV para los tres motores
+├── connect.py    # Gestión de conexiones (Singleton Pattern)
+├── populate.py   # Script de carga masiva y gestión de esquema
+├── main.py       # Interfaz de usuario (Menús)
+└── README.md     # Documentación técnica y de negocio
 ```

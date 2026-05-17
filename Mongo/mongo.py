@@ -38,10 +38,10 @@ def rf1_menu():
             for p in db.products.find({"category": cat}):
                 print(f"  {p['name']} | ${p['price']} | Stock: {p['stock']}")
         elif opt == "3":
-            # Busca productos por nombre usando una expresión regular insensible a mayúsculas.
-            # mongosh: db.products.find({ name: { $regex: /<nombre>/i } })
-            name = input("Nombre (búsqueda parcial): ")
-            for p in db.products.find({"name": {"$regex": name, "$options": "i"}}):
+            # Busca productos por nombre usando el índice de texto.
+            # mongosh: db.products.find({ $text: { $search: "<nombre>" } })
+            name = input("Nombre (búsqueda por palabras): ")
+            for p in db.products.find({"$text": {"$search": name}}):
                 print(f"  {p['name']} | {p['category']} | ${p['price']}")
         elif opt == "4":
             # Busca productos cuyo precio está dentro de un rango específico.
@@ -338,16 +338,12 @@ def rf5_menu():
 
 def rf6_create_indexes():
     # Crea índices para optimizar búsquedas frecuentes en MongoDB.
-    # mongosh:
-    #   db.users.createIndex({ email: 1 }, { unique: true })
-    #   db.products.createIndex({ category: 1, price: 1 })
-    #   db.products.createIndex({ name: "text" })
-    #   db.carts.createIndex({ user_id: 1 })
-    #   db.user_preferences.createIndex({ user_id: 1 })
     print(f"\n  {RF_DESCRIPTIONS[6]}")
     db.users.create_index("email", unique=True)
     db.products.create_index([("category", 1), ("price", 1)])
     db.products.create_index([("name", "text")])
+    db.products.create_index("price")
+    db.products.create_index("name")
     db.carts.create_index("user_id")
     db.user_preferences.create_index("user_id")
     print("\n✓ Índices creados.")

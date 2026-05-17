@@ -13,12 +13,24 @@ def get_session():
 def rf1_vistas_usuario():
     session = get_session()
     if not session: return
-    user_id = input("UUID del usuario: ")
-    query = "SELECT viewed_at, product_id, product_name, category FROM product_views_by_user WHERE user_id = %s"
-    rows = session.execute(query, [uuid.UUID(user_id)])
-    print("\n--- Historial de Vistas ---")
-    for row in rows:
-        print(f"[{row.viewed_at}] Producto: {row.product_name} ({row.product_id}) | Cat: {row.category}")
+    print("1. Ver por Usuario (Partition Key: user_id)")
+    print("2. Ver por Producto (Partition Key: product_id)")
+    sub_opt = input("Selecciona sub-opción: ")
+    
+    if sub_opt == "1":
+        user_id = input("UUID del usuario: ")
+        query = "SELECT viewed_at, product_id, product_name, category FROM product_views_by_user WHERE user_id = %s"
+        rows = session.execute(query, [uuid.UUID(user_id)])
+        print("\n--- Historial de Vistas por Usuario ---")
+        for row in rows:
+            print(f"[{row.viewed_at}] Producto: {row.product_name} ({row.product_id}) | Cat: {row.category}")
+    elif sub_opt == "2":
+        prod_id = input("UUID del producto: ")
+        query = "SELECT viewed_at, user_id, product_name FROM product_views_by_product WHERE product_id = %s"
+        rows = session.execute(query, [uuid.UUID(prod_id)])
+        print("\n--- Historial de Vistas por Producto ---")
+        for row in rows:
+            print(f"[{row.viewed_at}] Usuario: {row.user_id} | Nombre: {row.product_name}")
 
 # ==================== RF2: Historial de Búsquedas ====================
 def rf2_busquedas_usuario():
@@ -70,13 +82,25 @@ def rf5_actividad_carrito():
 def rf6_cambios_precio():
     session = get_session()
     if not session: return
-    user_id = input("UUID del usuario: ")
-    product_id = input("UUID del producto: ")
-    query = "SELECT captured_at, price_seen FROM user_price_history WHERE user_id = %s AND product_id = %s"
-    rows = session.execute(query, [uuid.UUID(user_id), uuid.UUID(product_id)])
-    print("\n--- Precios Visualizados por el Usuario ---")
-    for row in rows:
-        print(f"[{row.captured_at}] Precio observado: ${row.price_seen}")
+    print("1. Ver por Usuario y Producto (PK: user_id, product_id)")
+    print("2. Ver evolución por Producto (PK: product_id)")
+    sub_opt = input("Selecciona sub-opción: ")
+
+    if sub_opt == "1":
+        user_id = input("UUID del usuario: ")
+        product_id = input("UUID del producto: ")
+        query = "SELECT captured_at, price_seen FROM user_price_history WHERE user_id = %s AND product_id = %s"
+        rows = session.execute(query, [uuid.UUID(user_id), uuid.UUID(product_id)])
+        print("\n--- Precios Visualizados por el Usuario ---")
+        for row in rows:
+            print(f"[{row.captured_at}] Precio observado: ${row.price_seen}")
+    elif sub_opt == "2":
+        product_id = input("UUID del producto: ")
+        query = "SELECT captured_at, price_seen FROM price_history_by_product WHERE product_id = %s"
+        rows = session.execute(query, [uuid.UUID(product_id)])
+        print("\n--- Evolución de Precios del Producto ---")
+        for row in rows:
+            print(f"[{row.captured_at}] Precio: ${row.price_seen}")
 
 # ==================== RF7: Registro de Favoritos ====================
 def rf7_favoritos_usuario():
