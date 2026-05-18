@@ -24,24 +24,45 @@ def rf1_menuD():
         opt = input("Selecciona una opción: ")
         
         if opt == "1" or opt == "2":
-            condicion = f'eq(email, "{input("Email del usuario: ")}")' if opt == "1" else f'eq(name, "{input("Nombre del usuario: ")}")'
+            if opt == "1":
+                v = input("Email del usuario: ")
+                condicion = f'eq(email, "{v}")'
+                fil = f'not eq(email, "{v}")'
+            else:
+                v = input("Nombre del usuario: ")
+                condicion = f'eq(name, "{v}")'
+                fil = f'not eq(name, "{v}")'
+            
             query = f"""
             {{
-              rf1(func: {condicion}) {{
+              var(func: {condicion}) {{
+                usuario_origen as uid
+                bought {{
+                  productos_comprados as uid
+                }}
+              }}
+
+              rf1(func: uid(usuario_origen)) {{
                 name
                 bought {{
                   name
-                  ~bought {{
+                  ~bought @filter(not uid(usuario_origen)) {{
                     name
-                    bought {{ name price }}
+                    bought @filter(not uid(productos_comprados)) {{ 
+                      name 
+                      price 
+                    }}
                   }}
                 }}
               }}
             }}
             """
             run_query(query)
+            
         elif opt == "0":
             break
+        else:
+            print("Opción no válida. Intenta de nuevo.")
 
 
 # ==================== RF2: Reseñas como Nodos de Conexión ====================
@@ -70,20 +91,30 @@ def rf2_menuD():
             run_query(query)
         elif opt == "0":
             break
+        else:
+            print("Opción no válida. Intenta de nuevo.")
 
 
 # ================= RF3: Filtrado de Calidad y Clientes Frecuentes ============
 def rf3_menuD():
     print("\n--- RF3: Filtrado de Calidad y Clientes Frecuentes ---")
-    print("Obteniendo recomendaciones TOP de clientes frecuentes...")
     
     query = """
     {
-      rf3(func: eq(is_frequent, true)) {
+      var(func: ge(rating, 4)) {
+        ~wrote_review @filter(eq(is_frequent, true)) {
+          autores_calidad as uid
+        }
+      }
+
+      rf3(func: uid(autores_calidad)) {
         name
         wrote_review @filter(ge(rating, 4)) {
           rating
-          review_for { name price }
+          review_for { 
+            name 
+            price 
+          }
         }
       }
     }
@@ -93,35 +124,29 @@ def rf3_menuD():
 
 # ================ RF4: Productos Adquiridos Juntos (Co-compra) ===========
 def rf4_menuD():
-    while True:
-        print("\n--- RF4: Productos Adquiridos Juntos (Co-compra) ---")
-        print("1. Ver artículos comprados junto a un producto")
-        print("0. Regresar")
-        opt = input("Selecciona una opción: ")
-        if opt == "1":
-            prod = input("Nombre del producto exacto: ")
-            query = f"""
-            {{
-              rf4(func: eq(name, "{prod}")) {{
+    print("\n--- RF4: Productos Adquiridos Juntos (Co-compra) ---")
+    prod = input("Nombre del producto exacto: ")
+    
+    query = f"""
+    {{
+      rf4(func: eq(name, "{prod}")) {{
+        name
+        ~contains {{
+          ~placed {{
+            name
+            email
+            placed {{
+              contains {{
                 name
-                ~contains {{
-                  ~placed {{
-                    name
-                    email
-                    placed {{
-                      contains {{
-                        name
-                        price
-                      }}
-                    }}
-                  }}
-                }}
+                price
               }}
             }}
-            """
-            run_query(query)
-        elif opt == "0":
-            break
+          }}
+        }}
+      }}
+    }}
+    """
+    run_query(query)
 
 
 # ==================== RF5: Grafo de Actividad del Usuario ====================
@@ -147,6 +172,8 @@ def rf5_menuD():
             run_query(query)
         elif opt == "0":
             break
+        else:
+            print("Opción no válida. Intenta de nuevo.")
 
 
 # =============== RF6: Descubrimiento por Categoría Preferida ===============
@@ -174,6 +201,8 @@ def rf6_menuD():
             run_query(query)
         elif opt == "0":
             break
+        else:
+            print("Opción no válida. Intenta de nuevo.")
 
 
 # ============= RF7: Recomendación de Novedades por Compatibilidad ===========
@@ -186,15 +215,33 @@ def rf7_menuD():
         opt = input("Selecciona una opción: ")
         
         if opt == "1" or opt == "2":
-            cond = f'eq(email, "{input("Email del usuario: ")}")' if opt == "1" else f'eq(name, "{input("Nombre del usuario: ")}")'
+            if opt == "1":
+                valor = input("Email del usuario: ")
+                condicion = f'eq(email, "{valor}")'
+            else:
+                valor = input("Nombre del usuario: ")
+                condicion = f'eq(name, "{valor}")'
+            
             query = f"""
             {{
-              rf7(func: {cond}) {{
+              var(func: {condicion}) {{
+                usuario_origen as uid
+                bought {{
+                  productos_comprados as uid
+                }}
+              }}
+
+              rf7(func: uid(usuario_origen)) {{
                 name
                 bought {{
+                  name
                   belongs_to {{
                     category_name
-                    ~belongs_to @filter(eq(is_new, true)) {{ name price }}
+                    ~belongs_to @filter(eq(is_new, true) AND not uid(productos_comprados)) {{ 
+                      name 
+                      price 
+                      is_new
+                    }}
                   }}
                 }}
               }}
@@ -202,4 +249,6 @@ def rf7_menuD():
             """
             run_query(query)
         elif opt == "0":
-            break       
+            break
+        else:
+            print("Opción no válida. Intenta de nuevo.")     
