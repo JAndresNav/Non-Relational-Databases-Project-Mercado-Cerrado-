@@ -23,79 +23,88 @@ def populate_cassandra():
     session.set_keyspace('mercado_cerrado_logs')
     DATA_DIR_C = os.path.join(os.path.dirname(__file__), "data", "Cassandra")
 
-    # --- Product Views (RF1) ---
-    with open(os.path.join(DATA_DIR_C, "product_views.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            # Por usuario
-            query1 = "INSERT INTO product_views_by_user (user_id, viewed_at, product_id, product_name, category) VALUES (%s, %s, %s, %s, %s)"
-            session.execute(query1, [uuid.UUID(row['user_id']), datetime.strptime(row['viewed_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['product_name'], row['category']])
-            # Por producto (Nueva)
-            query2 = "INSERT INTO product_views_by_product (product_id, viewed_at, user_id, product_name) VALUES (%s, %s, %s, %s)"
-            session.execute(query2, [uuid.UUID(row['product_id']), datetime.strptime(row['viewed_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['user_id']), row['product_name']])
+    # --- Reutilizamos una función para insertar en la tabla unificada de usuario ---
+    def insert_user_activity(row, event_type, event_time_field, extra_data=None):
+        query = """
+            INSERT INTO activity_by_user (
+                user_id, event_type, event_time, product_id, product_name, 
+                category, search_query, order_id, total_amount, status, action, price_seen
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        vals = [
+            uuid.UUID(row['user_id']), event_type, datetime.strptime(row[event_time_field], "%Y-%m-%d %H:%M:%S"),
+            uuid.UUID(row.get('product_id')) if row.get('product_id') else None,
+            row.get('product_name'), row.get('category'), row.get('search_query'),
+            uuid.UUID(row.get('order_id')) if row.get('order_id') else None,
+            float(row['total_amount']) if row.get('total_amount') else None,
+            row.get('status'), row.get('action'),
+            float(row['price_seen']) if row.get('price_seen') else None
+        ]
+        session.execute(query, vals)
+
+    def insert_product_activity(row, event_type, event_time_field, price_field=None):
+        query = """
+            INSERT INTO activity_by_product (
+                product_id, event_type, event_time, user_id, product_name, price_seen
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        vals = [
+            uuid.UUID(row['product_id']), event_type, datetime.strptime(row[event_time_field], "%Y-%m-%d %H:%M:%S"),
+            uuid.UUID(row['user_id']), row.get('product_name'),
+            float(row[price_field]) if price_field and row.get(price_field) else None
+        ]
+        session.execute(query, vals)
+
+    # --- Mapeo de CSVs a Tablas Unificadas ---
     
-    # --- Searches (RF2) ---
+    # RF1: Views
+    with open(os.path.join(DATA_DIR_C, "product_views.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            insert_user_activity(row, 'VIEW', 'viewed_at')
+            insert_product_activity(row, 'VIEW', 'viewed_at')
+
+    # RF2: Searches
     with open(os.path.join(DATA_DIR_C, "searches.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            query = "INSERT INTO search_history_by_user (user_id, searched_at, search_query) VALUES (%s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['searched_at'], "%Y-%m-%d %H:%M:%S"), row['search_query']])
+        for row in csv.DictReader(f):
+            insert_user_activity(row, 'SEARCH', 'searched_at')
 
-    # --- Purchases (RF3) ---
+    # RF3: Purchases
     with open(os.path.join(DATA_DIR_C, "purchases.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            products = row['product_names'].split(";")
-            query = "INSERT INTO purchase_history_by_user (user_id, purchase_time, order_id, product_names, total_amount, status) VALUES (%s, %s, %s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['purchase_time'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['order_id']), products, float(row['total_amount']), row['status']])
+        for row in csv.DictReader(f):
+            # Nota: purchases.csv tiene product_names como lista, lo manejamos simplificado
+            insert_user_activity(row, 'PURCHASE', 'purchase_time')
 
-    # --- Logins (RF4) ---
+    # RF4: Logins
     with open(os.path.join(DATA_DIR_C, "logins.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            query = "INSERT INTO login_logs_by_user (user_id, logged_at) VALUES (%s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['logged_at'], "%Y-%m-%d %H:%M:%S")])
+        for row in csv.DictReader(f):
+            insert_user_activity(row, 'LOGIN', 'logged_at')
 
-    # --- Cart Activity (RF5) ---
+    # RF5: Cart
     with open(os.path.join(DATA_DIR_C, "cart_activity.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            query = "INSERT INTO cart_activity_by_user (user_id, event_time, product_id, action) VALUES (%s, %s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['event_time'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id']), row['action']])
+        for row in csv.DictReader(f):
+            insert_user_activity(row, 'CART', 'event_time')
 
-    # --- Price Changes (RF6) ---
+    # RF6: Price Watch
     with open(os.path.join(DATA_DIR_C, "user_price_history.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            # Por usuario
-            query1 = "INSERT INTO user_price_history (user_id, product_id, captured_at, price_seen) VALUES (%s, %s, %s, %s)"
-            session.execute(query1, [uuid.UUID(row['user_id']), uuid.UUID(row['product_id']), datetime.strptime(row['captured_at'], "%Y-%m-%d %H:%M:%S"), float(row['price_seen'])])
-            # Por producto (Nueva)
-            query2 = "INSERT INTO price_history_by_product (product_id, captured_at, price_seen) VALUES (%s, %s, %s)"
-            session.execute(query2, [uuid.UUID(row['product_id']), datetime.strptime(row['captured_at'], "%Y-%m-%d %H:%M:%S"), float(row['price_seen'])])
+        for row in csv.DictReader(f):
+            insert_user_activity(row, 'PRICE_WATCH', 'captured_at')
+            insert_product_activity(row, 'PRICE_HISTORY', 'captured_at', 'price_seen')
 
-    # --- Favorites (RF7) ---
+    # RF7: Favorites
     with open(os.path.join(DATA_DIR_C, "favorites.csv"), encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            query = "INSERT INTO favorite_activity_by_user (user_id, added_at, product_id) VALUES (%s, %s, %s)"
-            session.execute(query, [uuid.UUID(row['user_id']), datetime.strptime(row['added_at'], "%Y-%m-%d %H:%M:%S"), uuid.UUID(row['product_id'])])
+        for row in csv.DictReader(f):
+            insert_user_activity(row, 'FAVORITE', 'added_at')
 
-    print("\n✓ Populate completado en Cassandra.")
+    print("\n✓ Populate completado en Cassandra (Tablas Unificadas).")
 
 def drop_all_cassandra():
     session = get_cassandra_session(keyspace='mercado_cerrado_logs')
-    tables = [
-        "product_views_by_user", "product_views_by_product", "search_history_by_user",
-        "purchase_history_by_user", "login_logs_by_user", "cart_activity_by_user",
-        "user_price_history", "price_history_by_product", "favorite_activity_by_user"
-    ]
-    for t in tables:
+    for t in ["activity_by_user", "activity_by_product"]:
         try:
             session.execute(f"TRUNCATE {t}")
-        except Exception as e:
-            print(f"Error al vaciar tabla {t}: {e}")
-    print("✓ Todas las tablas de Cassandra han sido vaciadas.")
+        except Exception:
+            pass
+    print("✓ Tablas unificadas de Cassandra vaciadas.")
 
 # MongoDB
 
@@ -105,7 +114,6 @@ DATA_DIR_D = os.path.join(os.path.dirname(__file__), "data", "Dgraph")
 
 
 def populate_mongo():
-    # Drop existing collections
     for col in ["products", "users", "carts", "wishlists", "user_preferences"]:
         db[col].drop()
 
@@ -149,7 +157,6 @@ def populate_mongo():
         db.users.insert_many(users)
         print(f"  users: {len(users)} documentos insertados.")
 
-    # Build lookup maps
     user_map = {u["email"]: u["_id"] for u in db.users.find({}, {"email": 1})}
     product_map = {p["name"]: p["_id"] for p in db.products.find({}, {"name": 1})}
 
